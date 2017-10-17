@@ -30,51 +30,27 @@ void SeqVect::FromFASTAFile(TextFile &File)
 	{
 	Clear();
 
-	char szLine[MAX_FASTA_LINE];
-	Seq *ptrSeq = 0;
+	FILE *f = File.GetStdioFile();
 	for (;;)
 		{
-		bool bEof = File.GetLine(szLine, sizeof(szLine));
-		if (bEof)
+		char *Label;
+		unsigned uLength;
+		char *SeqData = GetFastaSeq(f, &uLength, &Label);
+		if (0 == SeqData)
 			return;
-		if ('>' == szLine[0])
-			{
-			ptrSeq = new Seq;
-			push_back(ptrSeq);
-			size_t n = strlen(szLine);
-			if (1 == n)
-				Quit("Missing annotation following '>' in FASTA file %s line %u",
-				File.GetFileName(), File.GetLineNr());
+		Seq *ptrSeq = new Seq;
 
-			ptrSeq->SetName(szLine + 1);
-			}
-		else
+		for (unsigned i = 0; i < uLength; ++i)
 			{
-			const char *ptrChar = szLine;
-			while (char c = *ptrChar++)
-				{
-				if (isspace(c))
-					continue;
-				if (IsGap(c))
-					continue;
-				if (!IsValidAminoEx(c))
-					{
-					if (isprint(c))
-						{
-						Warning("Invalid amino acid '%c' in FASTA file %s line %d, replaced by 'X'",
-						  c, File.GetFileName(), File.GetLineNr());
-						c = 'X';
-						}
-					else
-						Quit("Invalid byte hex %02x in FASTA file %s line %d",
-						  (unsigned char) c, File.GetFileName(), File.GetLineNr());
-					}
-				c = toupper(c);
-				if (0 == ptrSeq)
-					Quit("Invalid FASTA file, missing '>'");
-				ptrSeq->push_back(c);
-				}
+			char c = SeqData[i];
+			ptrSeq->push_back(c);
 			}
+
+		ptrSeq->SetName(Label);
+		push_back(ptrSeq);
+
+		delete[] SeqData;
+		delete[] Label;
 		}
 	}
 
@@ -201,6 +177,13 @@ unsigned SeqVect::GetSeqId(unsigned uSeqIndex) const
 	return ptrSeq->GetId();
 	}
 
+unsigned SeqVect::GetSeqLength(unsigned uSeqIndex) const
+	{
+	assert(uSeqIndex < size());
+	const Seq *ptrSeq = at(uSeqIndex);
+	return ptrSeq->Length();
+	}
+
 Seq &SeqVect::GetSeq(unsigned uSeqIndex)
 	{
 	assert(uSeqIndex < size());
@@ -218,4 +201,57 @@ void SeqVect::SetSeqId(unsigned uSeqIndex, unsigned uId)
 	assert(uSeqIndex < size());
 	Seq *ptrSeq = at(uSeqIndex);
 	return ptrSeq->SetId(uId);
+	}
+
+ALPHA SeqVect::GuessAlpha() const
+	{
+// If at least MIN_NUCLEO_PCT of the first CHAR_COUNT non-gap
+// letters belong to the nucleotide alphabet, guess nucleo.
+// Otherwise amino.
+	const unsigned CHAR_COUNT = 100;
+	const unsigned MIN_NUCLEO_PCT = 95;
+
+	const unsigned uSeqCount = GetSeqCount();
+	if (0 == uSeqCount)
+		return ALPHA_Amino;
+
+	unsigned uSeqIndex = 0;
+	unsigned uPos = 0;
+	unsigned uSeqLength = GetSeqLength(0);
+	unsigned uNucleoCount = 0;
+	unsigned uTotal = 0;
+	const Seq *ptrSeq = &GetSeq(0);
+	for (;;)
+		{
+		if (uPos >= uSeqLength)
+			{
+			++uSeqIndex;
+			if (uSeqIndex >= uSeqCount)
+				break;
+			ptrSeq = &GetSeq(uSeqIndex);
+			uSeqLength = ptrSeq->Length();
+			uPos = 0;
+			}
+		char c = ptrSeq->at(uPos++);
+		if (IsGapChar(c))
+			continue;
+		if (IsNucleo(c))
+			++uNucleoCount;
+		++uTotal;
+		if (uTotal >= CHAR_COUNT)
+			break;
+		}
+	if (uTotal != 0 && ((uNucleoCount*100)/uTotal) >= MIN_NUCLEO_PCT)
+		return ALPHA_Nucleo;
+	return ALPHA_Amino;
+	}
+
+void SeqVect::FixAlpha()
+	{
+	unsigned uSeqCount = Length();
+	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
+		{
+		Seq *ptrSeq = at(uSeqIndex);
+		ptrSeq->FixAlpha();
+		}
 	}

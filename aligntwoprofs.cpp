@@ -27,7 +27,8 @@ SCORE AlignTwoProfs(
 	AlignTwoProfsGivenPath(Path, PA, uLengthB, wA/(wA + wB), PB, uLengthB, wB/(wA + wB),
 	  ptrPout, ptruLengthOut);
 
-	Hydro(*ptrPout, *ptruLengthOut);
+	if (ALPHA_Amino == g_Alpha)
+		Hydro(*ptrPout, *ptruLengthOut);
 
 	return Score;
 	}

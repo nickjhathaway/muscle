@@ -24,6 +24,10 @@ void DistUnaligned(const SeqVect &v, DISTANCE DistMethod, DistFunc &DF)
 		DistKbit20_3(v, DF);
 		break;
 
+	case DISTANCE_Kmer4_6:
+		DistKmer4_6(v, DF);
+		break;
+
 	case DISTANCE_PWKimura:
 		DistPWKimura(v, DF);
 		break;

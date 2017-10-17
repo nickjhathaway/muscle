@@ -123,6 +123,37 @@ static short *MakeRootSeqE(const Seq &s, const Tree &GuideTree, unsigned uLeafNo
 	return EstringCurr;
 	}
 
+static unsigned GetFirstNodeIndex(const Tree &tree)
+	{
+	if (g_bStable)
+		return 0;
+	return tree.FirstDepthFirstNode();
+	}
+
+static unsigned GetNextNodeIndex(const Tree &tree, unsigned uPrevNodeIndex)
+	{
+	if (g_bStable)
+		{
+		const unsigned uNodeCount = tree.GetNodeCount();
+		unsigned uNodeIndex = uPrevNodeIndex;
+		for (;;)
+			{
+			++uNodeIndex;
+			if (uNodeIndex >= uNodeCount)
+				return NULL_NEIGHBOR;
+			if (tree.IsLeaf(uNodeIndex))
+				return uNodeIndex;
+			}
+		}
+	unsigned uNodeIndex = uPrevNodeIndex;
+	for (;;)
+		{
+		uNodeIndex = tree.NextDepthFirstNode(uNodeIndex);
+		if (NULL_NEIGHBOR == uNodeIndex || tree.IsLeaf(uNodeIndex))
+			return uNodeIndex;
+		}
+	}
+
 void MakeRootMSA(const SeqVect &v, const Tree &GuideTree, ProgNode Nodes[],
   MSA &a)
 	{
@@ -141,12 +172,12 @@ void MakeRootMSA(const SeqVect &v, const Tree &GuideTree, ProgNode Nodes[],
 	short *Estring1 = new short[uEstringSize];
 	short *Estring2 = new short[uEstringSize];
 	SetProgressDesc("Root alignment");
-	for (unsigned uTreeNodeIndex = 0; uTreeNodeIndex < uTreeNodeCount;
-	  ++uTreeNodeIndex)
+
+	unsigned uTreeNodeIndex = GetFirstNodeIndex(GuideTree);
+	do
 		{
-		if (!GuideTree.IsLeaf(uTreeNodeIndex))
-			continue;
 		Progress(uSeqIndex, uSeqCount);
+
 		unsigned uId = GuideTree.GetLeafId(uTreeNodeIndex);
 		const Seq &s = *(v[uId]);
 
@@ -186,10 +217,11 @@ void MakeRootMSA(const SeqVect &v, const Tree &GuideTree, ProgNode Nodes[],
 		for (unsigned uColIndex = 0; uColIndex < uColCount; ++uColIndex)
 			a.SetChar(uSeqIndex, uColIndex, sRootE[uColIndex]);
 		++uSeqIndex;
+
+		uTreeNodeIndex = GetNextNodeIndex(GuideTree, uTreeNodeIndex);
 		}
+	while (NULL_NEIGHBOR != uTreeNodeIndex);
+
 	ProgressStepsDone();
 	assert(uSeqIndex == uSeqCount);
-
-	//extern void TESTTEST(const SeqVect &s, const MSA &a, const Tree &GuideTree, const ProgNode Nodes[]);
-	//TESTTEST(v, a, GuideTree, Nodes);
 	}

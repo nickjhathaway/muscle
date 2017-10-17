@@ -51,6 +51,7 @@ static VALUE_OPT ValueOpts[] =
 	"Hydro",			0,
 	"HydroFactor",		0,
 	"SPScore",			0,
+	"SeqType",			0,
 	};
 static int ValueOptCount = sizeof(ValueOpts)/sizeof(ValueOpts[0]);
 
@@ -59,6 +60,7 @@ static FLAG_OPT FlagOpts[] =
 	"LE",					false,
 	"SP",					false,
 	"SV",					false,
+	"SPN",					false,
 	"TermGapsHalf",			false,
 	"TermGapsHalfLonger",	false,
 	"TermGapsFull",			false,
@@ -70,6 +72,7 @@ static FLAG_OPT FlagOpts[] =
 	"MSF",					false,
 	"Verbose",				false,
 	"Anchors",				false,
+	"NoAnchors",			false,
 	"Refine",				false,
 	"SW",					false,
 	"Profile",				false,
@@ -78,7 +81,12 @@ static FLAG_OPT FlagOpts[] =
 	"Brenner",				false,
 	"Dimer",				false,
 	"clw",					false,
+	"clwstrict",			false,
 	"HTML",					false,
+	"Version",				false,
+	"Stable",				false,
+	"Group",				false,
+	"FASTA",				false,
 	};
 static int FlagOptCount = sizeof(FlagOpts)/sizeof(FlagOpts[0]);
 

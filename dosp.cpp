@@ -18,6 +18,30 @@ void DoSP()
 	MSA a;
 	a.FromFile(f);
 
+	ALPHA Alpha = ALPHA_Undefined;
+	switch (g_SeqType)
+		{
+	case SEQTYPE_Auto:
+		Alpha = a.GuessAlpha();
+		break;
+
+	case SEQTYPE_Protein:
+		Alpha = ALPHA_Amino;
+		break;
+
+	case SEQTYPE_Nucleo:
+		Alpha = ALPHA_Nucleo;
+		break;
+
+	default:
+		Quit("Invalid SeqType");
+		}
+	SetAlpha(Alpha);
+	a.FixAlpha();
+
+	if (ALPHA_Nucleo == Alpha)
+		SetPPScore(PPSCORE_SPN);
+
 	const unsigned uSeqCount = a.GetSeqCount();
 	if (0 == uSeqCount)
 		Quit("No sequences in input file %s", g_pstrSPFileName);

@@ -8,6 +8,17 @@
 // places with different definitions of s (Start), c (Case)
 // and e (End). See types.h.
 
+s(ALPHA)
+c(ALPHA, Amino)
+c(ALPHA, Nucleo)
+e(ALPHA)
+
+s(SEQTYPE)
+c(SEQTYPE, Protein)
+c(SEQTYPE, Nucleo)
+c(SEQTYPE, Auto)
+e(SEQTYPE)
+
 s(ROOT)
 c(ROOT, Pseudo)
 c(ROOT, MidLongestSpan)
@@ -40,6 +51,7 @@ c(DISTANCE, Kmer6_6)
 c(DISTANCE, Kmer20_3)
 c(DISTANCE, Kmer20_4)
 c(DISTANCE, Kbit20_3)
+c(DISTANCE, Kmer4_6)
 c(DISTANCE, PctIdKimura)
 c(DISTANCE, PctIdLog)
 c(DISTANCE, PWKimura)
@@ -49,6 +61,7 @@ s(PPSCORE)
 c(PPSCORE, LE)
 c(PPSCORE, SP)
 c(PPSCORE, SV)
+c(PPSCORE, SPN)
 e(PPSCORE)
 
 s(SEQWEIGHT)

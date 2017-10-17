@@ -20,13 +20,13 @@ void SortCounts(const FCOUNT fcCounts[], unsigned SortOrder[])
 		{
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
 		};
-	memcpy(SortOrder, InitialSortOrder, sizeof(InitialSortOrder));
+	memcpy(SortOrder, InitialSortOrder, g_AlphaSize*sizeof(unsigned));
 
 	bool bAny = true;
 	while (bAny)
 		{
 		bAny = false;
-		for (unsigned n = 0; n < MAX_ALPHA - 1; ++n)
+		for (unsigned n = 0; n < g_AlphaSize - 1; ++n)
 			{
 			unsigned i1 = SortOrder[n];
 			unsigned i2 = SortOrder[n+1];
@@ -40,27 +40,64 @@ void SortCounts(const FCOUNT fcCounts[], unsigned SortOrder[])
 		}
 	}
 
-unsigned AminoGroupFromFCounts(const FCOUNT fcCounts[])
+static unsigned AminoGroupFromFCounts(const FCOUNT fcCounts[])
 	{
 	bool bAny = false;
-	unsigned uConsensusAminoGroup = AAGROUP_MULTIPLE;
-	for (unsigned uLetter = 0; uLetter < MAX_ALPHA; ++uLetter)
+	unsigned uConsensusResidueGroup = RESIDUE_GROUP_MULTIPLE;
+	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
 		{
 		if (0 == fcCounts[uLetter])
 			continue;
-		const unsigned uAminoGroup = AminoGroup[uLetter];
+		const unsigned uResidueGroup = ResidueGroup[uLetter];
 		if (bAny)
 			{
-			if (uAminoGroup != uConsensusAminoGroup)
-				return AAGROUP_MULTIPLE;
+			if (uResidueGroup != uConsensusResidueGroup)
+				return RESIDUE_GROUP_MULTIPLE;
 			}
 		else
 			{
 			bAny = true;
-			uConsensusAminoGroup = uAminoGroup;
+			uConsensusResidueGroup = uResidueGroup;
 			}
 		}
-	return uConsensusAminoGroup;
+	return uConsensusResidueGroup;
+	}
+
+static unsigned NucleoGroupFromFCounts(const FCOUNT fcCounts[])
+	{
+	bool bAny = false;
+	unsigned uConsensusResidueGroup = RESIDUE_GROUP_MULTIPLE;
+	for (unsigned uLetter = 0; uLetter < 4; ++uLetter)
+		{
+		if (0 == fcCounts[uLetter])
+			continue;
+		const unsigned uResidueGroup = uLetter;
+		if (bAny)
+			{
+			if (uResidueGroup != uConsensusResidueGroup)
+				return RESIDUE_GROUP_MULTIPLE;
+			}
+		else
+			{
+			bAny = true;
+			uConsensusResidueGroup = uResidueGroup;
+			}
+		}
+	return uConsensusResidueGroup;
+	}
+
+unsigned ResidueGroupFromFCounts(const FCOUNT fcCounts[])
+	{
+	switch (g_Alpha)
+		{
+	case ALPHA_Amino:
+		return AminoGroupFromFCounts(fcCounts);
+
+	case ALPHA_Nucleo:
+		return NucleoGroupFromFCounts(fcCounts);
+		}
+	Quit("ResidueGroupFromFCounts: bad alpha");
+	return 0;
 	}
 
 ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
@@ -91,9 +128,9 @@ ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
 
 		SortCounts(PP.m_fcCounts, PP.m_uSortOrder);
 
-		PP.m_uAminoGroup = AminoGroupFromFCounts(PP.m_fcCounts);
+		PP.m_uResidueGroup = ResidueGroupFromFCounts(PP.m_fcCounts);
 
-		for (unsigned i = 0; i < 20; ++i)
+		for (unsigned i = 0; i < g_AlphaSize; ++i)
 			{
 			SCORE scoreSum = 0;
 			for (unsigned j = 0; j < 20; ++j)
@@ -112,7 +149,7 @@ ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
 //		PP.m_scoreGapExtend = (SCORE) ((1.0 - fcGapExtend)*scoreGapExtend);
 
 #if	PAF
-		if (sStartOcc > 0.5)
+		if (ALHPA_Amino == g_Alpha && sStartOcc > 0.5)
 			{
 			extern SCORE PAFactor(const FCOUNT fcCounts[]);
 			SCORE paf = PAFactor(PP.m_fcCounts);
@@ -130,7 +167,8 @@ ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
 			}
 		}
 
-	Hydro(Pos, uColCount);
+	if (ALPHA_Amino == g_Alpha)
+		Hydro(Pos, uColCount);
 
 #if	TRACE
 	{
@@ -176,11 +214,11 @@ void ListProfile(const ProfPos *Prof, unsigned uLength, const MSA *ptrMSA)
 
 	Log("\n");
 	Log("  Pos G");
-	for (unsigned n = 0; n < 20; ++n)
-		Log("     %c", LetterToCharAmino(n));
+	for (unsigned n = 0; n < g_AlphaSize; ++n)
+		Log("     %c", LetterExToChar(n));
 	Log("\n");
 	Log("  --- -");
-	for (unsigned n = 0; n < 20; ++n)
+	for (unsigned n = 0; n < g_AlphaSize; ++n)
 		Log(" -----");
 	Log("\n");
 
@@ -188,12 +226,12 @@ void ListProfile(const ProfPos *Prof, unsigned uLength, const MSA *ptrMSA)
 		{
 		const ProfPos &PP = Prof[n];
 		Log("%5u", n);
-		if (-1 == PP.m_uAminoGroup)
-			Log(" -", PP.m_uAminoGroup);
+		if (-1 == PP.m_uResidueGroup)
+			Log(" -", PP.m_uResidueGroup);
 		else
-			Log(" %d", PP.m_uAminoGroup);
+			Log(" %d", PP.m_uResidueGroup);
 
-		for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
+		for (unsigned uLetter = 0; uLetter < g_AlphaSize; ++uLetter)
 			{
 			FCOUNT f = PP.m_fcCounts[uLetter];
 			if (f == 0.0)

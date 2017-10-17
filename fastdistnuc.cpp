@@ -12,44 +12,25 @@ const unsigned TUPLE_COUNT = 6*6*6*6*6*6;
 static unsigned char Count1[TUPLE_COUNT];
 static unsigned char Count2[TUPLE_COUNT];
 
-// Amino acid groups according to MAFFT (sextet5)
-// 0 =  A G P S T
-// 1 =  I L M V
-// 2 =  N D Q E B Z
-// 3 =  R H K
-// 4 =  F W Y
-// 5 =  C
-// 6 =  X . - U
-unsigned ResidueGroup[] =
-	{
-	0,		// AX_A,
-	5,		// AX_C,
-	2,		// AX_D,
-	2,		// AX_E,
-	4,		// AX_F,
-	0,		// AX_G,
-	3,		// AX_H,
-	1,		// AX_I,
-	3,		// AX_K,
-	1,		// AX_L,
-	1,		// AX_M,
-	2,		// AX_N,
-	0,		// AX_P,
-	2,		// AX_Q,
-	3,		// AX_R,
-	0,		// AX_S,
-	0,		// AX_T,
-	1,		// AX_V,
-	4,		// AX_W,
-	4,		// AX_Y,
+// Nucleotide groups according to MAFFT (sextet5)
+// 0 =  A
+// 1 =  C
+// 2 =  G
+// 3 =  T
+// 4 =  other
 
-	2,		// AX_B,	// D or N
-	2,		// AX_Z,	// E or Q
-	0,		// AX_X,	// Unknown		// ******** TODO *************
-										// This isn't the correct way of avoiding group 6
-	0		// AX_GAP,					// ******** TODO ******************
+static unsigned ResidueGroup[] =
+	{
+	0,		// NX_A,
+	1,		// NX_C,
+	2,		// NX_G,
+	3,		// NX_T/U
+	4,		// NX_N,
+	4,		// NX_R,
+	4,		// NX_Y,
+	4,		// NX_GAP
 	};
-unsigned uResidueGroupCount = sizeof(ResidueGroup)/sizeof(ResidueGroup[0]);
+static unsigned uResidueGroupCount = sizeof(ResidueGroup)/sizeof(ResidueGroup[0]);
 
 static char *TupleToStr(int t)
 	{
@@ -111,8 +92,11 @@ static void ListCount(const unsigned char Count[])
 		}
 	}
 
-void DistKmer6_6(const SeqVect &v, DistFunc &DF)
+void DistKmer4_6(const SeqVect &v, DistFunc &DF)
 	{
+	if (ALPHA_Nucleo != g_Alpha)
+		Quit("DistKmer4_6 requires nucleo alphabet");
+
 	const unsigned uSeqCount = v.Length();
 
 	DF.SetCount(uSeqCount);
@@ -273,17 +257,4 @@ void DistKmer6_6(const SeqVect &v, DistFunc &DF)
 	for (unsigned n = 0; n < uSeqCount; ++n)
 		delete[] uCommonTupleCount[n];
 	delete[] uCommonTupleCount;
-	}
-
-double PctIdToMAFFTDist(double dPctId)
-	{
-	if (dPctId < 0.05)
-		dPctId = 0.05;
-	double dDist = -log(dPctId);
-	return dDist;
-	}
-
-double PctIdToHeightMAFFT(double dPctId)
-	{
-	return PctIdToMAFFTDist(dPctId);
 	}

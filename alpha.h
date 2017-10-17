@@ -1,25 +1,33 @@
-#ifndef	Alpha_h
-#define	Alpha_h
+#ifndef	alpha_h
+#define	alpha_h
 
-unsigned CharToLetterX(char c);
-unsigned CharToLetterAmino(char c);
-unsigned CharToLetterAminoX(char c);
-char LetterToCharAmino(unsigned uLetter);
-char LetterToCharAminoEx(unsigned uLetter);
-char LetterToCharNucleic(unsigned uLetter);
-bool IsValidAmino(char c);
-bool IsValidAminoEx(char c);
-bool IsGap(char c);
-bool IsTerminalGap(char c);
-bool IsNonTerminalGap(char c);
-bool IsWildcard(char c);
 bool StrHasAmino(const char *Str);
 bool StrHasGap(const char *Str);
-char UnalignChar(char c);
-bool IsAlignedChar(char c);
-bool IsUnalignedChar(char c);
 
-extern unsigned CharToLetterAminoEx[];
+extern unsigned g_CharToLetter[];
+extern unsigned g_CharToLetterEx[];
+
+extern char g_LetterToChar[];
+extern char g_LetterExToChar[];
+
+extern char g_UnalignChar[];
+extern char g_AlignChar[];
+
+extern bool g_IsWildcardChar[];
+extern bool g_IsResidueChar[];
+
+#define CharToLetter(c)		(g_CharToLetter[(unsigned char) (c)])
+#define CharToLetterEx(c)	(g_CharToLetterEx[(unsigned char) (c)])
+
+#define LetterToChar(u)		(g_LetterToChar[u])
+#define LetterExToChar(u)	(g_LetterExToChar[u])
+
+#define IsResidueChar(c)	(g_IsResidueChar[(unsigned char) (c)])
+#define IsGapChar(c)		('-' == (c) || '.' == (c))
+#define IsWildcardChar(c)	(g_IsWildcardChar[(unsigned char) (c)])
+
+#define AlignChar(c)		(g_AlignChar[(unsigned char) (c)])
+#define UnalignChar(c)		(g_UnalignChar[(unsigned char) (c)])
 
 // AX=Amino alphabet with eXtensions (B, Z and X)
 enum AX
@@ -45,14 +53,41 @@ enum AX
 	AX_W,
 	AX_Y,
 
-	AX_X,	// Unknown
+	AX_X,	// Any
 
 	AX_B,	// D or N
 	AX_Z,	// E or Q
 
 	AX_GAP,
 	};
+const unsigned AX_COUNT = AX_GAP + 1;
 
-const int AX_COUNT = 24;
+// NX=Nucleotide alphabet with extensions
+enum NX
+	{
+	NX_A,
+	NX_C,
+	NX_G,
+	NX_T,
+	NX_U = NX_T,
 
-#endif	// Alpha_h
+	NX_N,	// Any
+	NX_R,	// A or G
+	NX_Y,	// C or T/U
+
+	NX_GAP
+	};
+const unsigned NX_COUNT = NX_GAP + 1;
+
+const unsigned MAX_ALPHA = 20;
+const unsigned MAX_ALPHA_EX = AX_COUNT;
+const unsigned MAX_CHAR = 256;
+
+extern ALPHA g_Alpha;
+extern unsigned g_AlphaSize;
+
+void SetAlpha(ALPHA Alpha);
+char GetWildcardChar();
+bool IsNucleo(char c);
+
+#endif	// alpha_h

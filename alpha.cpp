@@ -1,185 +1,185 @@
 #include "muscle.h"
 #include <ctype.h>
 
-// The 21st amino acid, Selenocysteine (Sel, U), is treated
-// as an X because I have no substitution probabilities for it.
+/***
+Nucleotide alphabet is AGCUTRYN
+	T and U are equivalent in scoring etc.
+	R = purine (G or A)
+	Y = pyrimidine (C or T/U)
+	N = any
+***/
 
-const char szAmino[]	= "ACDEFGHIKLMNPQRSTVWY";
-const char szAminoEx[]	= "ACDEFGHIKLMNPQRSTVWYBZX";
+unsigned g_CharToLetter[MAX_CHAR];
+unsigned g_CharToLetterEx[MAX_CHAR];
 
-static unsigned uReverseAmino[256];
-unsigned CharToLetterAminoEx[256];
+char g_LetterToChar[MAX_ALPHA];
+char g_LetterExToChar[MAX_ALPHA_EX];
 
-static void InitCharToLetterAminoEx()
-	{
-	memset(CharToLetterAminoEx, 0xff, sizeof(CharToLetterAminoEx));
+char g_UnalignChar[MAX_CHAR];
+char g_AlignChar[MAX_CHAR];
 
-	CharToLetterAminoEx['a'] = AX_A;
-	CharToLetterAminoEx['c'] = AX_C;
-	CharToLetterAminoEx['d'] = AX_D;
-	CharToLetterAminoEx['e'] = AX_E;
-	CharToLetterAminoEx['f'] = AX_F;
-	CharToLetterAminoEx['g'] = AX_G;
-	CharToLetterAminoEx['h'] = AX_H;
-	CharToLetterAminoEx['i'] = AX_I;
-	CharToLetterAminoEx['k'] = AX_K;
-	CharToLetterAminoEx['l'] = AX_L;
-	CharToLetterAminoEx['m'] = AX_M;
-	CharToLetterAminoEx['n'] = AX_N;
-	CharToLetterAminoEx['p'] = AX_P;
-	CharToLetterAminoEx['q'] = AX_Q;
-	CharToLetterAminoEx['r'] = AX_R;
-	CharToLetterAminoEx['s'] = AX_S;
-	CharToLetterAminoEx['t'] = AX_T;
-	CharToLetterAminoEx['v'] = AX_V;
-	CharToLetterAminoEx['w'] = AX_W;
-	CharToLetterAminoEx['y'] = AX_Y;
+bool g_IsWildcardChar[MAX_CHAR];
+bool g_IsResidueChar[MAX_CHAR];
 
-	CharToLetterAminoEx['b'] = AX_B;
-	CharToLetterAminoEx['z'] = AX_Z;
-	CharToLetterAminoEx['x'] = AX_X;
+ALPHA g_Alpha = ALPHA_Undefined;
+unsigned g_AlphaSize = 0;
 
-	CharToLetterAminoEx['A'] = AX_A;
-	CharToLetterAminoEx['C'] = AX_C;
-	CharToLetterAminoEx['D'] = AX_D;
-	CharToLetterAminoEx['E'] = AX_E;
-	CharToLetterAminoEx['F'] = AX_F;
-	CharToLetterAminoEx['G'] = AX_G;
-	CharToLetterAminoEx['H'] = AX_H;
-	CharToLetterAminoEx['I'] = AX_I;
-	CharToLetterAminoEx['K'] = AX_K;
-	CharToLetterAminoEx['L'] = AX_L;
-	CharToLetterAminoEx['M'] = AX_M;
-	CharToLetterAminoEx['N'] = AX_N;
-	CharToLetterAminoEx['P'] = AX_P;
-	CharToLetterAminoEx['Q'] = AX_Q;
-	CharToLetterAminoEx['R'] = AX_R;
-	CharToLetterAminoEx['S'] = AX_S;
-	CharToLetterAminoEx['T'] = AX_T;
-	CharToLetterAminoEx['V'] = AX_V;
-	CharToLetterAminoEx['W'] = AX_W;
-	CharToLetterAminoEx['Y'] = AX_Y;
-
-	CharToLetterAminoEx['B'] = AX_B;
-	CharToLetterAminoEx['Z'] = AX_Z;
-	CharToLetterAminoEx['X'] = AX_X;
-
-	CharToLetterAminoEx['.'] = AX_GAP;
-	CharToLetterAminoEx['-'] = AX_GAP;
-	CharToLetterAminoEx['~'] = AX_GAP;
+#define Res(c, Letter)												\
+	{																\
+	const unsigned char Upper = (unsigned char) toupper(c);			\
+	const unsigned char Lower = (unsigned char) tolower(c);			\
+	g_CharToLetter[Upper] = Letter;									\
+	g_CharToLetter[Lower] = Letter;									\
+	g_CharToLetterEx[Upper] = Letter;								\
+	g_CharToLetterEx[Lower] = Letter;								\
+	g_LetterToChar[Letter] = Upper;									\
+	g_LetterExToChar[Letter] = Upper;								\
+	g_IsResidueChar[Upper] = true;									\
+	g_IsResidueChar[Lower] = true;									\
+	g_AlignChar[Upper] = Upper;										\
+	g_AlignChar[Lower] = Upper;										\
+	g_UnalignChar[Upper] = Lower;									\
+	g_UnalignChar[Lower] = Lower;									\
 	}
 
-static bool InitReverseTables()
+#define Wild(c, Letter)												\
+	{																\
+	const unsigned char Upper = (unsigned char) toupper(c);			\
+	const unsigned char Lower = (unsigned char) tolower(c);			\
+	g_CharToLetterEx[Upper] = Letter;								\
+	g_CharToLetterEx[Lower] = Letter;								\
+	g_LetterExToChar[Letter] = Upper;								\
+	g_IsResidueChar[Upper] = true;									\
+	g_IsResidueChar[Lower] = true;									\
+	g_AlignChar[Upper] = Upper;										\
+	g_AlignChar[Lower] = Upper;										\
+	g_UnalignChar[Upper] = Lower;									\
+	g_UnalignChar[Lower] = Lower;									\
+	g_IsWildcardChar[Lower] = true;									\
+	g_IsWildcardChar[Upper] = true;									\
+	}
+
+static unsigned GetAlphaSize(ALPHA Alpha)
 	{
-	InitCharToLetterAminoEx();
-
-	memset(uReverseAmino, 0xff, sizeof(uReverseAmino));
-
-	for (unsigned n = 0; n < sizeof(szAmino); ++n)
+	switch (Alpha)
 		{
-		unsigned char c = (unsigned char) szAmino[n];
-		if (isalpha(c))
-			{
-			uReverseAmino[toupper(c)] = n;
-			uReverseAmino[tolower(c)] = n;
-			}
-		else
-			uReverseAmino[tolower(c)] = n;
+	case ALPHA_Amino:
+		return 20;
+
+	case ALPHA_Nucleo:
+		return 4;
 		}
-
-	return true;
-	}
-static bool bInitDone = InitReverseTables();
-
-char LetterToCharAmino(unsigned uLetter)
-	{
-	assert(uLetter < 20);
-	return szAmino[uLetter];
-	}
-
-char LetterToCharAminoEx(unsigned uLetter)
-	{
- 	assert(uLetter < 23);
-	return szAminoEx[uLetter];
-	}
-
-unsigned CharToLetterAmino(char c)
-	{
-	unsigned uLetter = uReverseAmino[(unsigned char) c];
-	assert(uLetter < 20);
-	return uLetter;
-	}
-
-unsigned CharToLetterX(char c)
-	{
-	return CharToLetterAminoEx[c];
-	}
-
-bool IsValidAmino(char c)
-	{
-//	return 0 != strchr(szAmino, toupper(c));
-	return 0xffffffff != uReverseAmino[(unsigned char) c];
-	}
-
-bool IsValidAminoEx(char c)
-	{
-//	return 0 != strchr(szAminoEx, toupper(c));
-	return 0xffffffff != CharToLetterAminoEx[(unsigned char) c];
-	}
-
-bool IsGap(char c)
-	{
-	return '-' == c || '.' == c || c == '~';
-	}
-
-bool IsNonTerminalGap(char c)
-	{
-	return '-' == c || '.' == c;
-	}
-
-bool IsTerminalGap(char c)
-	{
-	return '~' == c;
-	}
-
-bool IsWildcard(char c)
-	{
-	c = toupper(c);
-	return 'X' == c || 'B' == c || 'Z' == c || 'U' == c;
-	}
-
-bool StrHasAmino(const char *Str)
-	{
-	while (char c = *Str++)
-		if (IsValidAmino(c))
-			return true;
-	return false;
-	}
-
-bool StrHasGap(const char *Str)
-	{
-	while (char c = *Str++)
-		if (IsGap(c))
-			return true;
-	return false;
-	}
-
-char UnalignChar(char c)
-	{
-	if (isalpha(c))
-		return tolower(c);
-	else if ('-' == c || '.' == c || '~' == c)
-		return '.';
-	assert(false);
+	Quit("Invalid Alpha=%d", Alpha);
 	return 0;
 	}
 
-bool IsAlignedChar(char c)
+static void InitArrays()
 	{
-	return (isalpha(c) && isupper(c)) || '-' == c || '~' == c;
+	memset(g_CharToLetter, 0xff, sizeof(g_CharToLetter));
+	memset(g_CharToLetterEx, 0xff, sizeof(g_CharToLetterEx));
+
+	memset(g_LetterToChar, '?', sizeof(g_LetterToChar));
+	memset(g_LetterExToChar, '?', sizeof(g_LetterExToChar));
+
+	memset(g_AlignChar, '?', sizeof(g_UnalignChar));
+	memset(g_UnalignChar, '?', sizeof(g_UnalignChar));
+
+	memset(g_IsWildcardChar, 0, sizeof(g_IsWildcardChar));
 	}
 
-bool IsUnalignedChar(char c)
+static void SetGapChar(char c)
 	{
-	return !IsAlignedChar(c);
+	unsigned char u = (unsigned char) c;
+
+	g_CharToLetterEx[u] = AX_GAP;
+	g_LetterExToChar[AX_GAP] = u;
+	g_AlignChar[u] = u;
+	g_UnalignChar[u] = u;
+	}
+
+static void SetAlphaNucleo()
+	{
+	Res('A', NX_A)
+	Res('C', NX_C)
+	Res('G', NX_G)
+	Res('U', NX_U)
+	Res('T', NX_T)
+
+	Wild('N', NX_N)
+	Wild('R', NX_R)
+	Wild('Y', NX_Y)
+	}
+
+static void SetAlphaAmino()
+	{
+	Res('A', AX_A)
+	Res('C', AX_C)
+	Res('D', AX_D)
+	Res('E', AX_E)
+	Res('F', AX_F)
+	Res('G', AX_G)
+	Res('H', AX_H)
+	Res('I', AX_I)
+	Res('K', AX_K)
+	Res('L', AX_L)
+	Res('M', AX_M)
+	Res('N', AX_N)
+	Res('P', AX_P)
+	Res('Q', AX_Q)
+	Res('R', AX_R)
+	Res('S', AX_S)
+	Res('T', AX_T)
+	Res('V', AX_V)
+	Res('W', AX_W)
+	Res('Y', AX_Y)
+
+	Wild('B', AX_B)
+	Wild('X', AX_X)
+	Wild('Z', AX_Z)
+	}
+
+void SetAlpha(ALPHA Alpha)
+	{
+	InitArrays();
+
+	SetGapChar('.');
+	SetGapChar('-');
+
+	switch (Alpha)
+		{
+	case ALPHA_Amino:
+		SetAlphaAmino();
+		break;
+
+	case ALPHA_Nucleo:
+		SetAlphaNucleo();
+		break;
+
+	default:
+		Quit("Invalid Alpha=%d", Alpha);
+		}
+
+	g_AlphaSize = GetAlphaSize(Alpha);
+	g_Alpha = Alpha;
+	}
+
+char GetWildcardChar()
+	{
+	switch (g_Alpha)
+		{
+	case ALPHA_Amino:
+		return 'X';
+
+	case ALPHA_Nucleo:
+		return 'N';
+
+	default:
+		Quit("Invalid Alpha=%d", g_Alpha);
+		}
+	return '?';
+	}
+
+bool IsNucleo(char c)
+	{
+	return strchr("ACGTURYNacgturyn", c) != 0;
 	}

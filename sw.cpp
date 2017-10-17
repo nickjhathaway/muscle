@@ -40,9 +40,9 @@ static char ConsensusChar(const ProfPos &PP)
 		}
 	if (!bAnyLetter)
 		return '-';
-	char c = LetterToCharAmino(uMostCommonLetter);
+	char c = LetterToChar(uMostCommonLetter);
 	if (bMoreThanOneLetter)
-		return tolower(c);
+		return UnalignChar(c);
 	return c;
 	}
 

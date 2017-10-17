@@ -1,14 +1,10 @@
 ofiles=`echo *.o`
 
-if [ ! $ofiles == "*.o" ] ; then
-	rm *.o
-fi
+rm *.o
 
 make -f Makefile > make.out 2> make.err
 
-if [ ! $ofiles == "*.o" ] ; then
-	rm *.o
-fi
+rm *.o
 
 cat make.err
 ls -l muscle

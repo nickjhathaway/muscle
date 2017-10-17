@@ -12,10 +12,15 @@ static char GetAlnConsensusChar(const MSA &a, unsigned uColIndex);
 
 void MSA::ToAlnFile(TextFile &File) const
 	{
-	File.PutString("MUSCLE ("
-	  MUSCLE_MAJOR_VERSION "." MUSCLE_MINOR_VERSION ")"
-	  " multiple sequence alignment\n");
-	File.PutString("\n");
+	if (g_bClwStrict)
+		File.PutString("CLUSTAL W (1.81) multiple sequence alignment\n");
+	else
+		{
+		File.PutString("MUSCLE ("
+		  MUSCLE_MAJOR_VERSION "." MUSCLE_MINOR_VERSION ")"
+		  " multiple sequence alignment\n");
+		File.PutString("\n");
+		}
 
 	int iLongestNameLength = 0;
 	for (unsigned uSeqIndex = 0; uSeqIndex < GetSeqCount(); ++uSeqIndex)
@@ -100,6 +105,9 @@ static char GetAlnConsensusChar(const MSA &a, unsigned uColIndex)
 //	'*' indicates positions which have a single, fully conserved residue
 	if (1 == Count)
 		return '*';
+
+	if (ALPHA_Amino != g_Alpha)
+		return ' ';
 
 #define B(a)	(1 << AX_##a)
 #define S2(a, b)		S(B(a) | B(b))

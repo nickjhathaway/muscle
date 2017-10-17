@@ -18,7 +18,7 @@ struct ProfPos
 	FCOUNT m_GL;
 	FCOUNT m_GG;
 	SCORE m_AAScores[20];
-	unsigned m_uAminoGroup;
+	unsigned m_uResidueGroup;
 	FCOUNT m_fOcc;
 	FCOUNT m_fcStartOcc;
 	FCOUNT m_fcEndOcc;
@@ -38,8 +38,8 @@ struct ProgNode
 	WEIGHT m_Weight;
 	};
 
-extern unsigned AminoGroup[];
-const unsigned AAGROUP_MULTIPLE = (unsigned) ~0;
+extern unsigned ResidueGroup[];
+const unsigned RESIDUE_GROUP_MULTIPLE = (unsigned) ~0;
 
 extern PTR_SCOREMATRIX g_ptrScoreMatrix;
 
@@ -61,8 +61,6 @@ SCORE ScoreProfPos2(const ProfPos &PPA, const ProfPos &PPB);
 SCORE FastScorePath2(const ProfPos *PA, unsigned uLengthA,
   const ProfPos *PB, unsigned uLengthB, const PWPath &Path);
 bool IsHydrophilic(const FCOUNT fcCounts[]);
-void FindDiags2(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
-  unsigned uLengthY, DiagList &DL);
 int PAM200_Letter(unsigned uLetter1, unsigned uLetter2);
 SCORE AverageMatchScore(const PWPath &Path, unsigned uEdgeIndex,
   unsigned uWindowLength);

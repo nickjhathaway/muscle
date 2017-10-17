@@ -37,6 +37,32 @@ void Local()
 	MSAFromFileName(g_pstrFileName1, msa1);
 	MSAFromFileName(g_pstrFileName2, msa2);
 
+	ALPHA Alpha = ALPHA_Undefined;
+	switch (g_SeqType)
+		{
+	case SEQTYPE_Auto:
+		Alpha = msa1.GuessAlpha();
+		break;
+
+	case SEQTYPE_Protein:
+		Alpha = ALPHA_Amino;
+		break;
+
+	case SEQTYPE_Nucleo:
+		Alpha = ALPHA_Nucleo;
+		break;
+
+	default:
+		Quit("Invalid SeqType");
+		}
+	SetAlpha(Alpha);
+
+	msa1.FixAlpha();
+	msa2.FixAlpha();
+
+	if (ALPHA_Nucleo == Alpha)
+		SetPPScore(PPSCORE_SPN);
+
 	const unsigned uSeqCount1 = msa1.GetSeqCount();
 	const unsigned uSeqCount2 = msa2.GetSeqCount();
 	const unsigned uMaxSeqCount = (uSeqCount1 > uSeqCount2 ? uSeqCount1 : uSeqCount2);

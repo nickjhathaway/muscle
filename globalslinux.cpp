@@ -64,6 +64,9 @@ double GetMemUseMB()
 		}
 	char Buffer[64];
 	int n = read(fd, Buffer, sizeof(Buffer) - 1);
+	close(fd);
+	fd = -1;
+
 	if (n <= 0)
 		{
 		static bool Warned = false;

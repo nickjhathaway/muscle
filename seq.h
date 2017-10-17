@@ -70,6 +70,7 @@ public:
 	char GetChar(unsigned uIndex) const { return operator[](uIndex); }
 	void SetChar(unsigned uIndex, char c) { operator[](uIndex) = c; }
 	void AppendChar(char c) { push_back(c); }
+	void FixAlpha();
 
 #ifndef	_WIN32
 	reference at(size_type i) { return operator[](i); }

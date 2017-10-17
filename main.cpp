@@ -1,15 +1,16 @@
 #include "muscle.h"
 #include <stdio.h>
+#ifdef	WIN32
+#include <io.h>	// for isatty()
+#else
+#include <unistd.h>	// for isatty()
+#endif
 
 int g_argc;
 char **g_argv;
 
 int main(int argc, char **argv)
 	{
-	//extern void SPTest();
-	//SPTest();
-	//exit(0);
-
 	g_argc = argc;
 	g_argv = argv;
 
@@ -19,12 +20,19 @@ int main(int argc, char **argv)
 	SetParams();
 	SetLogFile();
 
-	if (!g_bQuiet)
+	if (g_bVersion)
 		{
-		fprintf(stderr, "\n" MUSCLE_LONG_VERSION "\n\n");
-		fprintf(stderr, "http://www.drive5.com/muscle\n");
-		fprintf(stderr, "This software is donated to the public domain.\n");
-		fprintf(stderr, "Please cite: Edgar, R.C. Nucleic Acids Res 32(5), 1792-97.\n\n");
+		printf(MUSCLE_LONG_VERSION "\n");
+		exit(EXIT_SUCCESS);
+		}
+
+	if (!g_bQuiet)
+		Credits();
+
+	if (MissingCommand() && isatty(0))
+		{
+		Usage();
+		exit(EXIT_SUCCESS);
 		}
 
 	if (g_bCatchExceptions)

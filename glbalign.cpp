@@ -28,6 +28,9 @@ SCORE GlobalAlignNoDiags(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB
 	case PPSCORE_SP:
 	case PPSCORE_SV:
 		return GlobalAlignSP(PA, uLengthA, PB, uLengthB, Path);
+
+	case PPSCORE_SPN:
+		return GlobalAlignSimple(PA, uLengthA, PB, uLengthB, Path);
 		}
 
 	Quit("Invalid PP score (GlobalAlignNoDiags)");

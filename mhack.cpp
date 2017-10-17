@@ -14,6 +14,9 @@ static bool *M;
 
 void MHackStart(SeqVect &v)
 	{
+	if (ALPHA_Amino != g_Alpha)
+		return;
+
 	const unsigned uSeqCount = v.Length();
 	M = new bool[uSeqCount];
 	memset(M, 0, uSeqCount*sizeof(bool));
@@ -31,6 +34,9 @@ void MHackStart(SeqVect &v)
 
 void MHackEnd(MSA &msa)
 	{
+	if (ALPHA_Amino != g_Alpha)
+		return;
+
 	const unsigned uSeqCount = msa.GetSeqCount();
 	const unsigned uColCount = msa.GetColCount();
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)

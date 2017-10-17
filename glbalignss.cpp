@@ -90,7 +90,7 @@ static void RowFromSeq(const Seq &s, SCORE *Row[])
 	for (unsigned i = 0; i < uLength; ++i)
 		{
 		char c = s.GetChar(i);
-		unsigned uLetter = CharToLetterAmino(c);
+		unsigned uLetter = CharToLetter(c);
 		if (uLetter < 20)
 			Row[i] = VTML_SP[uLetter];
 		else
@@ -104,7 +104,7 @@ static void LettersFromSeq(const Seq &s, unsigned Letters[])
 	for (unsigned i = 0; i < uLength; ++i)
 		{
 		char c = s.GetChar(i);
-		unsigned uLetter = CharToLetterAmino(c);
+		unsigned uLetter = CharToLetter(c);
 		if (uLetter < 20)
 			Letters[i] = uLetter;
 		else

@@ -30,7 +30,7 @@ double MSA::GetAvgCons() const
 double MSA::GetCons(unsigned uColIndex) const
 	{
 	unsigned Counts[MAX_ALPHA];
-	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
+	for (unsigned uLetter = 0; uLetter < g_AlphaSize; ++uLetter)
 		Counts[uLetter] = 0;
 
 	unsigned uMaxCount = 0;
@@ -72,7 +72,7 @@ double MSA::GetPctIdentityPair(unsigned uSeqIndex1, unsigned uSeqIndex2) const
 		{
 		const char c1 = GetChar(uSeqIndex1, uColIndex);
 		const char c2 = GetChar(uSeqIndex2, uColIndex);
-		if (::IsGap(c1) || ::IsGap(c2))
+		if (IsGapChar(c1) || IsGapChar(c2))
 			continue;
 		if (c1 == c2)
 			++uSameCount;
@@ -88,7 +88,7 @@ double MSA::GetPctIdentityPair(unsigned uSeqIndex1, unsigned uSeqIndex2) const
 double MSA::GetPctGroupIdentityPair(unsigned uSeqIndex1,
   unsigned uSeqIndex2) const
 	{
-	extern unsigned AminoGroup[];
+	extern unsigned ResidueGroup[];
 
 	const unsigned uColCount = GetColCount();
 	unsigned uPosCount = 0;
@@ -106,8 +106,8 @@ double MSA::GetPctGroupIdentityPair(unsigned uSeqIndex1,
 
 		const unsigned uLetter1 = GetLetter(uSeqIndex1, uColIndex);
 		const unsigned uLetter2 = GetLetter(uSeqIndex2, uColIndex);
-		const unsigned uGroup1 = AminoGroup[uLetter1];
-		const unsigned uGroup2 = AminoGroup[uLetter2];
+		const unsigned uGroup1 = ResidueGroup[uLetter1];
+		const unsigned uGroup2 = ResidueGroup[uLetter2];
 		if (uGroup1 == uGroup2)
 			++uSameCount;
 		++uPosCount;
