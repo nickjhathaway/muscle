@@ -35,6 +35,7 @@ public:
 	void Skip();
 	void SkipLine();
 	void SkipWhite();
+	bool SkipWhiteX();
 	void Rewind();
 	TEXTFILEPOS GetPos();
 	void SetPos(TEXTFILEPOS Pos);

@@ -100,8 +100,7 @@ void RealignDiffsE(const MSA &msaIn, const SeqVect &v,
   MSA &msaOut, ProgNode *OldProgNodes);
 void RefineTree(MSA &msa, Tree &tree);
 void RefineTreeE(MSA &msa, const SeqVect &v, Tree &tree, ProgNode *ProgNodes);
-void SetScoreMatrix();
-extern bool IsHydrophobic(const FCOUNT fcCounts[]);
+bool IsHydrophobic(const FCOUNT fcCounts[]);
 void Hydro(ProfPos *Prof, unsigned uLength);
 void SetTermGaps(const ProfPos *Prof, unsigned uLength);
 

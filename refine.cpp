@@ -50,6 +50,7 @@ void Refine()
 	SetAlpha(Alpha);
 	msa.FixAlpha();
 
+	SetPPScore();
 	if (ALPHA_DNA == Alpha || ALPHA_RNA == Alpha)
 		SetPPScore(PPSCORE_SPN);
 

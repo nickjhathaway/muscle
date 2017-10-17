@@ -2,6 +2,8 @@
 #include "distfunc.h"
 #include "seqvect.h"
 
+void DistPWScoreDist(const SeqVect &v, DistFunc &DF);
+
 void DistUnaligned(const SeqVect &v, DISTANCE DistMethod, DistFunc &DF)
 	{
 	const unsigned uSeqCount = v.Length();
@@ -30,6 +32,10 @@ void DistUnaligned(const SeqVect &v, DISTANCE DistMethod, DistFunc &DF)
 
 	case DISTANCE_PWKimura:
 		DistPWKimura(v, DF);
+		break;
+
+	case DISTANCE_PWScoreDist:
+		DistPWScoreDist(v, DF);
 		break;
 
 	default:

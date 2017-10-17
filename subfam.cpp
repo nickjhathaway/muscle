@@ -170,7 +170,7 @@ void AlignSubFam(SeqVect &vAll, const Tree &GuideTree, unsigned uNodeIndex,
 	char CmdLine[4096];
 	sprintf(CmdLine, "probcons %s > %s 2> /dev/null", InTmp, OutTmp);
 //	sprintf(CmdLine, "muscle -in %s -out %s -maxiters 1", InTmp, OutTmp);
-	system(CmdLine);
+	int NotUsed = system(CmdLine);
 
 	TextFile fOut(OutTmp);
 	msaOut.FromFile(fOut);
@@ -231,6 +231,29 @@ void ProgAlignSubFams()
 	SetAlpha(Alpha);
 	v.FixAlpha();
 
+	PTR_SCOREMATRIX UserMatrix = 0;
+	if (0 != g_pstrMatrixFileName)
+		{
+		const char *FileName = g_pstrMatrixFileName;
+		const char *Path = getenv("MUSCLE_MXPATH");
+		if (Path != 0)
+			{
+			size_t n = strlen(Path) + 1 + strlen(FileName) + 1;
+			char *NewFileName = new char[n];
+			sprintf(NewFileName, "%s/%s", Path, FileName);
+			FileName = NewFileName;
+			}
+		TextFile File(FileName);
+		UserMatrix = ReadMx(File);
+		g_Alpha = ALPHA_Amino;
+		g_PPScore = PPSCORE_SP;
+		}
+
+	SetPPScore();
+
+	if (0 != UserMatrix)
+		g_ptrScoreMatrix = UserMatrix;
+
 	if (ALPHA_DNA == Alpha || ALPHA_RNA == Alpha)
 		{
 		SetPPScore(PPSCORE_SPN);
@@ -250,6 +273,8 @@ void ProgAlignSubFams()
 	SetIter(1);
 	g_bDiags = g_bDiags1;
 	SetSeqStats(uSeqCount, uMaxL, uTotL/uSeqCount);
+
+	SetMuscleSeqVect(v);
 
 	MSA::SetIdCount(uSeqCount);
 

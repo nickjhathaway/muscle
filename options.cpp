@@ -43,10 +43,13 @@ static VALUE_OPT ValueOpts[] =
 	"LogA",				0,
 	"MaxTrees",			0,
 	"SUEFF",			0,
+	"Distance",			0,
 	"Distance1",		0,
 	"Distance2",		0,
+	"Weight",			0,
 	"Weight1",			0,
 	"Weight2",			0,
+	"Cluster",			0,
 	"Cluster1",			0,
 	"Cluster2",			0,
 	"Root1",			0,
@@ -75,6 +78,9 @@ static VALUE_OPT ValueOpts[] =
 	"PHYIOut",			0,
 	"PHYSOut",			0,
 	"Matrix",			0,
+ 	"DistMx1",			0,
+ 	"DistMx2",			0,
+	"Weight",			0,
 	};
 static int ValueOptCount = sizeof(ValueOpts)/sizeof(ValueOpts[0]);
 
@@ -99,7 +105,7 @@ static FLAG_OPT FlagOpts[] =
 	"SW",					false,
 	"Profile",				false,
 	"PPScore",				false,
-	"Cluster",				false,
+	"ClusterOnly",			false,
 	"Brenner",				false,
 	"Dimer",				false,
 	"clw",					false,
@@ -113,6 +119,8 @@ static FLAG_OPT FlagOpts[] =
 	"PAS",					false,
 	"PHYI",					false,
 	"PHYS",					false,
+	"TomHydro",				false,
+	"MakeTree",				false,
 	};
 static int FlagOptCount = sizeof(FlagOpts)/sizeof(FlagOpts[0]);
 

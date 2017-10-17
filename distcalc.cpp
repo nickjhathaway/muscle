@@ -37,19 +37,36 @@ void DistCalcMSA::Init(const MSA &msa, DISTANCE Distance)
 
 void DistCalcMSA::CalcDistRange(unsigned i, dist_t Dist[]) const
 	{
-//	const unsigned uSeqIndex1 = m_ptrMSA->GetSeqIndex(i);
 	for (unsigned j = 0; j < i; ++j)
 		{
-//		const unsigned uSeqIndex2 = m_ptrMSA->GetSeqIndex(j);
-		const float PctId = (float) m_ptrMSA->GetPctIdentityPair(i, j);
 		switch (m_Distance)
 			{
 		case DISTANCE_PctIdKimura:
+			{
+			const float PctId = (float) m_ptrMSA->GetPctIdentityPair(i, j);
 			Dist[j] = (float) KimuraDist(PctId);
 			break;
+			}
 		case DISTANCE_PctIdLog:
+			{
+			const float PctId = (float) m_ptrMSA->GetPctIdentityPair(i, j);
 			Dist[j] = (float) PctIdToMAFFTDist(PctId);
 			break;
+			}
+		case DISTANCE_ScoreDist:
+			{
+			double GetScoreDist(const MSA &msa, unsigned SeqIndex1, unsigned SeqIndex2);
+			Dist[j] = (float) GetScoreDist(*m_ptrMSA, i, j);
+			continue;
+			}
+		case DISTANCE_Edit:
+			{
+			const float PctId = (float) m_ptrMSA->GetPctIdentityPair(i, j);
+			if (PctId > 1.0)
+				Quit("Internal error, DISTANCE_Edit, pct id=%.3g", PctId);
+			Dist[j] = (float) 1.0 - PctId;
+			break;
+			}
 		default:
 			Quit("DistCalcMSA: Invalid DISTANCE_%u", m_Distance);
 			}

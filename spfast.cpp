@@ -11,7 +11,7 @@ enum
 	GG = 3,
 	};
 
-static char *GapTypeToStr(int GapType)
+static const char *GapTypeToStr(int GapType)
 	{
 	switch (GapType)
 		{

@@ -66,6 +66,7 @@ static void MakeRootSeq(const Seq &s, const Tree &GuideTree, unsigned uLeafNodeI
 		const PWPath &Path = Nodes[uNodeIndex].m_Path;
 		Seq sTmp;
 		PathSeq(sRoot, Path, bRight, sTmp);
+		sTmp.SetId(0);
 		sRoot.Copy(sTmp);
 		}
 	}
@@ -197,12 +198,12 @@ void MakeRootMSA(const SeqVect &v, const Tree &GuideTree, ProgNode Nodes[],
 			sRootE.LogMe();
 			Quit("Root seqs differ");
 			}
-#endif
-
 #if	TRACE
 		Log("MakeRootSeq=\n");
 		sRoot.LogMe();
 #endif
+#endif
+
 		if (uInsane == uColCount)
 			{
 			uColCount = sRootE.Length();

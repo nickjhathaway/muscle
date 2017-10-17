@@ -120,7 +120,7 @@ void DoMuscle()
 		{
 	// Discourage users...
 		if (!g_bUseTreeNoWarn)
-			fprintf(stderr, g_strUseTreeWarning);
+			fprintf(stderr, "%s", g_strUseTreeWarning);
 
 	// Read tree from file
 		TextFile TreeFile(g_pstrUseTreeFileName);
@@ -143,25 +143,20 @@ void DoMuscle()
 			bool SeqFound = v.FindName(LeafName, &uSeqIndex);
 			if (!SeqFound)
 				Quit("Label %s in tree does not match sequences", LeafName);
-			}
-
-	// Set ids
-		for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
-			{
-			const char *SeqName = v.GetSeqName(uSeqIndex);
-			unsigned uLeafIndex = GuideTree.GetLeafNodeIndex(SeqName);
-			GuideTree.SetLeafId(uLeafIndex, uSeqIndex);
+			unsigned uId = v.GetSeqIdFromName(LeafName);
+			GuideTree.SetLeafId(uNodeIndex, uId);
 			}
 		}
 	else
-		TreeFromSeqVect(v, GuideTree, g_Cluster1, g_Distance1, g_Root1);
+		TreeFromSeqVect(v, GuideTree, g_Cluster1, g_Distance1, g_Root1,
+		  g_pstrDistMxFileName1);
 
 	const char *Tree1 = ValueOpt("Tree1");
 	if (0 != Tree1)
 		{
 		TextFile f(Tree1, true);
 		GuideTree.ToFile(f);
-		if (g_bCluster)
+		if (g_bClusterOnly)
 			return;
 		}
 
@@ -270,6 +265,11 @@ void Run()
 		PPScore();
 	else if (g_bPAS)
 		ProgAlignSubFams();
+	else if (g_bMakeTree)
+		{
+		extern void DoMakeTree();
+		DoMakeTree();
+		}
 	else
 		DoMuscle();
 

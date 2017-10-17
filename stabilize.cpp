@@ -11,6 +11,7 @@ void Stabilize(const MSA &msa, MSA &msaStable)
 		{
 		const unsigned uSeqIndex = msa.GetSeqIndex(uId);
 		msaStable.SetSeqName(uId, msa.GetSeqName(uSeqIndex));
+		msaStable.SetSeqId(uSeqIndex, uId);
 		for (unsigned uColIndex = 0; uColIndex < uColCount; ++uColIndex)
 			{
 			const char c = msa.GetChar(uSeqIndex, uColIndex);

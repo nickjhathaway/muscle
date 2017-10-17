@@ -1,3 +1,5 @@
+//@@TODO reconcile /muscle with /muscle3.6
+
 #include "muscle.h"
 #include <stdio.h>
 #ifdef	WIN32
@@ -6,6 +8,10 @@
 #else
 #include <unistd.h>		// for isatty()
 #endif
+
+const char *MUSCLE_LONG_VERSION	= "MUSCLE v" SHORT_VERSION "."
+#include "svnversion.h"
+" by Robert C. Edgar";
 
 int g_argc;
 char **g_argv;
@@ -34,7 +40,7 @@ int main(int argc, char **argv)
 
 	if (g_bVersion)
 		{
-		printf(MUSCLE_LONG_VERSION "\n");
+		printf("%s\n", MUSCLE_LONG_VERSION);
 		exit(EXIT_SUCCESS);
 		}
 

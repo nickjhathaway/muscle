@@ -3,6 +3,8 @@
 
 #include <math.h>
 
+double GetScoreDist(const MSA &msa, unsigned SeqIndex1, unsigned SeqIndex2);
+
 class MSADist
 	{
 public:
@@ -13,6 +15,9 @@ public:
 
 	double ComputeDist(const MSA &msa, unsigned uSeqIndex1, unsigned uSeqIndex2)
 		{
+		if (m_Distance == DISTANCE_ScoreDist)
+			return GetScoreDist(msa, uSeqIndex1, uSeqIndex2);
+
 		double dPctId = msa.GetPctIdentityPair(uSeqIndex1, uSeqIndex2);
 		switch(m_Distance)
 			{

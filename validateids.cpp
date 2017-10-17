@@ -65,12 +65,19 @@ void ValidateMuscleIds(const MSA &msa)
 
 void ValidateMuscleIdsSeqVect(const Tree &tree)
 	{
+	const unsigned uSeqCount = g_ptrMuscleSeqVect->GetSeqCount();
 	const unsigned uNodeCount = tree.GetNodeCount();
 	for (unsigned uNodeIndex = 0; uNodeIndex < uNodeCount; ++uNodeIndex)
 		{
 		if (!tree.IsLeaf(uNodeIndex))
 			continue;
 		const unsigned uId = tree.GetLeafId(uNodeIndex);
+		if (uId >= uSeqCount)
+			{
+			tree.LogMe();
+			Quit("Leaf with node index %u has id=%u, there are %u seqs",
+			  uNodeIndex, uId, uSeqCount);
+			}
 		const char *ptrNameTree = tree.GetLeafName(uNodeIndex);
 		const char *ptrName = g_ptrMuscleSeqVect->GetSeqName(uId);
 		if (0 != strcmp(ptrNameTree, ptrName))
