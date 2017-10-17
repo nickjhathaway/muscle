@@ -19,7 +19,7 @@ static void DoSeq(Seq &s, unsigned uSeqIndex, const ProfPos *RootProf,
 	for (unsigned uColIndex = 0; uColIndex < uRootProfLength; ++uColIndex)
 		msaDummy.SetChar(0, uColIndex, '?');
 
-	ProfPos *SeqProf = ProfileFromMSA(msaSeq, g_scoreGapOpen, true);
+	ProfPos *SeqProf = ProfileFromMSA(msaSeq);
 	for (unsigned uColIndex = 0; uColIndex < uSeqLength; ++uColIndex)
 		{
 		ProfPos &PP = SeqProf[uColIndex];

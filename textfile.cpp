@@ -20,7 +20,7 @@ TextFile::TextFile(const char szFileName[], bool bWrite)
 			ptrFile = fopen(szFileName, "rb");
 		}
 	if (0 == ptrFile)
-		Quit("Cannot open '%s'\n", szFileName);
+		Quit("Cannot open '%s' errno=%d\n", szFileName, errno);
 	Init(ptrFile, szFileName);
 	}
 

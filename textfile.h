@@ -23,6 +23,7 @@ public:
 
 	TextFile(const char szFileName[], bool bWrite = false);
 	TextFile(FILE *ptrFile, const char *ptrFileName = "-");
+	void Close() { fclose(m_ptrFile); m_ptrFile = 0; }
 
 	bool GetLine(char szLine[], unsigned uBytes);
 	bool GetTrimLine(char szLine[], unsigned uBytes);

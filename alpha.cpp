@@ -2,11 +2,31 @@
 #include <ctype.h>
 
 /***
-Nucleotide alphabet is AGCUTRYN
-	T and U are equivalent in scoring etc.
-	R = purine (G or A)
-	Y = pyrimidine (C or T/U)
-	N = any
+From Bioperl docs:
+Extended DNA / RNA alphabet
+------------------------------------------
+Symbol       Meaning      Nucleic Acid
+------------------------------------------
+    A            A           Adenine
+    C            C           Cytosine
+    G            G           Guanine
+    T            T           Thymine
+    U            U           Uracil
+    M          A or C
+    R          A or G
+    W          A or T
+    S          C or G
+    Y          C or T
+    K          G or T
+    V        A or C or G
+    H        A or C or T
+    D        A or G or T
+    B        C or G or T
+    X      G or A or T or C
+    N      G or A or T or C
+
+IUPAC-IUB SYMBOLS FOR NUCLEOTIDE NOMENCLATURE:
+         Cornish-Bowden (1985) Nucl. Acids Res. 13: 3021-3030.
 ***/
 
 unsigned g_CharToLetter[MAX_CHAR];
@@ -66,7 +86,8 @@ static unsigned GetAlphaSize(ALPHA Alpha)
 	case ALPHA_Amino:
 		return 20;
 
-	case ALPHA_Nucleo:
+	case ALPHA_RNA:
+	case ALPHA_DNA:
 		return 4;
 		}
 	Quit("Invalid Alpha=%d", Alpha);
@@ -97,17 +118,45 @@ static void SetGapChar(char c)
 	g_UnalignChar[u] = u;
 	}
 
-static void SetAlphaNucleo()
+static void SetAlphaDNA()
+	{
+	Res('A', NX_A)
+	Res('C', NX_C)
+	Res('G', NX_G)
+	Res('T', NX_T)
+	Wild('M', NX_M)
+	Wild('R', NX_R)
+	Wild('W', NX_W)
+	Wild('S', NX_S)
+	Wild('Y', NX_Y)
+	Wild('K', NX_K)
+	Wild('V', NX_V)
+	Wild('H', NX_H)
+	Wild('D', NX_D)
+	Wild('B', NX_B)
+	Wild('X', NX_X)
+	Wild('N', NX_N)
+	}
+
+static void SetAlphaRNA()
 	{
 	Res('A', NX_A)
 	Res('C', NX_C)
 	Res('G', NX_G)
 	Res('U', NX_U)
 	Res('T', NX_T)
-
-	Wild('N', NX_N)
+	Wild('M', NX_M)
 	Wild('R', NX_R)
+	Wild('W', NX_W)
+	Wild('S', NX_S)
 	Wild('Y', NX_Y)
+	Wild('K', NX_K)
+	Wild('V', NX_V)
+	Wild('H', NX_H)
+	Wild('D', NX_D)
+	Wild('B', NX_B)
+	Wild('X', NX_X)
+	Wild('N', NX_N)
 	}
 
 static void SetAlphaAmino()
@@ -151,8 +200,11 @@ void SetAlpha(ALPHA Alpha)
 		SetAlphaAmino();
 		break;
 
-	case ALPHA_Nucleo:
-		SetAlphaNucleo();
+	case ALPHA_DNA:
+		SetAlphaDNA();
+
+	case ALPHA_RNA:
+		SetAlphaRNA();
 		break;
 
 	default:
@@ -161,6 +213,9 @@ void SetAlpha(ALPHA Alpha)
 
 	g_AlphaSize = GetAlphaSize(Alpha);
 	g_Alpha = Alpha;
+
+	if (g_bVerbose)
+		Log("Alphabet %s\n", ALPHAToStr(g_Alpha));
 	}
 
 char GetWildcardChar()
@@ -170,7 +225,8 @@ char GetWildcardChar()
 	case ALPHA_Amino:
 		return 'X';
 
-	case ALPHA_Nucleo:
+	case ALPHA_DNA:
+	case ALPHA_RNA:
 		return 'N';
 
 	default:
@@ -182,4 +238,46 @@ char GetWildcardChar()
 bool IsNucleo(char c)
 	{
 	return strchr("ACGTURYNacgturyn", c) != 0;
+	}
+
+bool IsDNA(char c)
+	{
+	return strchr("AGCTNagctn", c) != 0;
+	}
+
+bool IsRNA(char c)
+	{
+	return strchr("AGCUNagcun", c) != 0;
+	}
+
+static char InvalidLetters[256];
+static int InvalidLetterCount = 0;
+
+void ClearInvalidLetterWarning()
+	{
+	memset(InvalidLetters, 0, 256);
+	}
+
+void InvalidLetterWarning(char c, char w)
+	{
+	InvalidLetters[(unsigned char) c] = 1;
+	++InvalidLetterCount;
+	}
+
+void ReportInvalidLetters()
+	{
+	if (0 == InvalidLetterCount)
+		return;
+
+	char Str[257];
+	memset(Str, 0, 257);
+
+	int n = 0;
+	for (int i = 0; i < 256; ++i)
+		{
+		if (InvalidLetters[i])
+			Str[n++] = (char) i;
+		}
+	Warning("Assuming %s (see -seqtype option), invalid letters found: %s",
+	  ALPHAToStr(g_Alpha), Str);
 	}

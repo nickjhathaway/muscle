@@ -2,7 +2,7 @@
 #define diaglist_h
 
 const unsigned EMPTY = (unsigned) ~0;
-const unsigned MAX_DIAGS = 100;
+const unsigned MAX_DIAGS = 1024;
 
 struct Diag
 	{

@@ -124,6 +124,7 @@ void Seq::Copy(const Seq &rhs)
 	size_t n = strlen(ptrName) + 1;
 	m_ptrName = new char[n];
 	strcpy(m_ptrName, ptrName);
+	SetId(rhs.GetId());
 	}
 
 void Seq::CopyReversed(const Seq &rhs)
@@ -333,7 +334,8 @@ void Seq::FixAlpha()
 		if (!IsResidueChar(c))
 			{
 			char w = GetWildcardChar();
-			Warning("Invalid residue '%c', replaced by '%c'", c, w);
+			// Warning("Invalid residue '%c', replaced by '%c'", c, w);
+			InvalidLetterWarning(c, w);
 			*p = w;
 			}
 		}

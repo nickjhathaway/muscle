@@ -94,7 +94,7 @@ static void ListCount(const unsigned char Count[])
 
 void DistKmer4_6(const SeqVect &v, DistFunc &DF)
 	{
-	if (ALPHA_Nucleo != g_Alpha)
+	if (ALPHA_DNA != g_Alpha && ALPHA_RNA != g_Alpha)
 		Quit("DistKmer4_6 requires nucleo alphabet");
 
 	const unsigned uSeqCount = v.Length();
@@ -123,7 +123,8 @@ void DistKmer4_6(const SeqVect &v, DistFunc &DF)
 			{
 			char c = s[n];
 			L[n] = CharToLetterEx(c);
-			assert(L[n] < uResidueGroupCount);
+			if (L[n] >= 4)
+				L[n] = 4;
 			}
 		}
 
@@ -255,6 +256,10 @@ void DistKmer4_6(const SeqVect &v, DistFunc &DF)
 	ProgressStepsDone();
 
 	for (unsigned n = 0; n < uSeqCount; ++n)
+		{
 		delete[] uCommonTupleCount[n];
+		delete[] Letters[n];
+		}
 	delete[] uCommonTupleCount;
+	delete[] Letters;
 	}

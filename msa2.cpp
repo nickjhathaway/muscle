@@ -48,7 +48,7 @@ void MSA::GetFractionalWeightedCounts(unsigned uColIndex, bool bNormalize,
 					fcCounts[AX_E] += w/2;
 					fcCounts[AX_Q] += w/2;
 					break;
-				case AX_X:		// any
+				default:		// any
 					{
 					const FCOUNT f = w/20;
 					for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
@@ -58,7 +58,8 @@ void MSA::GetFractionalWeightedCounts(unsigned uColIndex, bool bNormalize,
 					}
 				break;
 
-			case ALPHA_Nucleo:
+			case ALPHA_DNA:
+			case ALPHA_RNA:
 				switch (uLetter)
 					{
 				case AX_R:	// G or A
@@ -69,7 +70,7 @@ void MSA::GetFractionalWeightedCounts(unsigned uColIndex, bool bNormalize,
 					fcCounts[NX_C] += w/2;
 					fcCounts[NX_T] += w/2;
 					break;
-				case AX_N:	// any
+				default:	// any
 					const FCOUNT f = w/20;
 					for (unsigned uLetter = 0; uLetter < 4; ++uLetter)
 						fcCounts[uLetter] += f;

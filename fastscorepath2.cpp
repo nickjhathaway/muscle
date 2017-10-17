@@ -144,6 +144,7 @@ SCORE FastScorePath2(const ProfPos *PA, unsigned uLengthA,
 			{
 			const ProfPos &LastPPB = PB[uLengthB - 1];
 			scoreGap = LastPPB.m_scoreGapClose;
+			break;
 			}
 
 		case 'U':

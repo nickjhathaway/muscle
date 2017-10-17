@@ -6,6 +6,7 @@
 #include "timing.h"
 
 #define TRACE		0
+#define TRACE_PATH	0
 #define LIST_DIAGS	0
 
 static double g_dDPAreaWithoutDiags = 0.0;
@@ -60,7 +61,7 @@ SCORE GlobalAlignDiags(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
 
 	if (ALPHA_Amino == g_Alpha)
 		FindDiags(PA, uLengthA, PB, uLengthB, DL);
-	else if (ALPHA_Nucleo == g_Alpha)
+	else if (ALPHA_DNA == g_Alpha || ALPHA_RNA == g_Alpha)
 		FindDiagsNuc(PA, uLengthA, PB, uLengthB, DL);
 	else
 		Quit("GlobalAlignDiags: bad alpha");
@@ -104,6 +105,7 @@ SCORE GlobalAlignDiags(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
 
 	g_dDPAreaWithoutDiags += uLengthA*uLengthB;
 
+	double dDPAreaWithDiags = 0.0;
 	const unsigned uRegionCount = RL.GetCount();
 	for (unsigned uRegionIndex = 0; uRegionIndex < uRegionCount; ++uRegionIndex)
 		{
@@ -113,7 +115,7 @@ SCORE GlobalAlignDiags(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
 		if (DPREGIONTYPE_Diag == r.m_Type)
 			{
 			DiagToPath(r.m_Diag, RegPath);
-#if	TRACE
+#if	TRACE_PATH
 			Log("DiagToPath, path=\n");
 			RegPath.LogMe();
 #endif
@@ -127,14 +129,14 @@ SCORE GlobalAlignDiags(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
 			const ProfPos *RegPA = PA + uRegStartPosA;
 			const ProfPos *RegPB = PB + uRegStartPosB;
 
-			g_dDPAreaWithDiags += uRegLengthA*uRegLengthB;
+			dDPAreaWithDiags += uRegLengthA*uRegLengthB;
 			GlobalAlignNoDiags(RegPA, uRegLengthA, RegPB, uRegLengthB, RegPath);
-#if	TRACE
+#if	TRACE_PATH
 			Log("GlobalAlignNoDiags RegPath=\n");
 			RegPath.LogMe();
 #endif
 			OffsetPath(RegPath, uRegStartPosA, uRegStartPosB);
-#if	TRACE
+#if	TRACE_PATH
 			Log("After offset path, RegPath=\n");
 			RegPath.LogMe();
 #endif
@@ -143,11 +145,20 @@ SCORE GlobalAlignDiags(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
 			Quit("GlobalAlignDiags, Invalid region type %u", r.m_Type);
 
 		AppendRegPath(Path, RegPath);
-#if	TRACE
+#if	TRACE_PATH
 		Log("After AppendPath, path=");
 		Path.LogMe();
 #endif
 		}
+
+#if	TRACE
+	{
+	double dDPAreaWithoutDiags = uLengthA*uLengthB;
+	Log("DP area with diags %.3g without %.3g pct saved %.3g %%\n",
+	  dDPAreaWithDiags, dDPAreaWithoutDiags, (1.0 - dDPAreaWithDiags/dDPAreaWithoutDiags)*100.0);
+	}
+#endif
+	g_dDPAreaWithDiags += dDPAreaWithDiags;
 	return 0;
 	}
 

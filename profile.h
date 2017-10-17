@@ -24,11 +24,21 @@ struct ProfPos
 	FCOUNT m_fcEndOcc;
 	SCORE m_scoreGapOpen;
 	SCORE m_scoreGapClose;
+#if	DOUBLE_AFFINE
+	SCORE m_scoreGapOpen2;
+	SCORE m_scoreGapClose2;
+#endif
 //	SCORE m_scoreGapExtend;
 	};
 
 struct ProgNode
 	{
+	ProgNode()
+		{
+		m_Prof = 0;
+		m_EstringL = 0;
+		m_EstringR = 0;
+		}
 	MSA m_MSA;
 	ProfPos *m_Prof;
 	PWPath m_Path;
@@ -43,7 +53,7 @@ const unsigned RESIDUE_GROUP_MULTIPLE = (unsigned) ~0;
 
 extern PTR_SCOREMATRIX g_ptrScoreMatrix;
 
-ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree);
+ProfPos *ProfileFromMSA(const MSA &a);
 
 SCORE TraceBack(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, const SCORE *DPM_, const SCORE *DPD_, const SCORE *DPI_,
@@ -71,7 +81,6 @@ SCORE FastScoreMSA_NS(const MSA &msa, SCORE MatchScore[] = 0);
 SCORE FastScoreMSA_SP(const MSA &msa, SCORE MatchScore[] = 0);
 bool RefineMSA(MSA &msa, const Tree &tree);
 SCORE MSAQScore(const MSA &msa, SCORE MatchScore[] = 0);
-bool TermGapsFree(unsigned uLength1, unsigned uLength2);
 bool RefineBiParts(MSA &msa, const Tree &tree, bool R);
 void FindAnchorCols(const MSA &msa, unsigned AnchorCols[],
   unsigned *ptruAnchorColCount);
@@ -94,18 +103,25 @@ void RefineTreeE(MSA &msa, const SeqVect &v, Tree &tree, ProgNode *ProgNodes);
 void SetScoreMatrix();
 extern bool IsHydrophobic(const FCOUNT fcCounts[]);
 void Hydro(ProfPos *Prof, unsigned uLength);
+void SetTermGaps(const ProfPos *Prof, unsigned uLength);
 
 // Macros to simulate 2D matrices
+#define DPL(PLA, PLB)	DPL_[(PLB)*uPrefixCountA + (PLA)]
 #define DPM(PLA, PLB)	DPM_[(PLB)*uPrefixCountA + (PLA)]
 #define DPD(PLA, PLB)	DPD_[(PLB)*uPrefixCountA + (PLA)]
+#define DPE(PLA, PLB)	DPE_[(PLB)*uPrefixCountA + (PLA)]
 #define DPI(PLA, PLB)	DPI_[(PLB)*uPrefixCountA + (PLA)]
+#define DPJ(PLA, PLB)	DPJ_[(PLB)*uPrefixCountA + (PLA)]
 #define DPU(PLA, PLB)	DPU_[(PLB)*uPrefixCountA + (PLA)]
 #define TBM(PLA, PLB)	TBM_[(PLB)*uPrefixCountA + (PLA)]
 #define TBD(PLA, PLB)	TBD_[(PLB)*uPrefixCountA + (PLA)]
+#define TBE(PLA, PLB)	TBE_[(PLB)*uPrefixCountA + (PLA)]
 #define TBI(PLA, PLB)	TBI_[(PLB)*uPrefixCountA + (PLA)]
+#define TBJ(PLA, PLB)	TBJ_[(PLB)*uPrefixCountA + (PLA)]
 
 SCORE ScoreProfPos2LA(const ProfPos &PPA, const ProfPos &PPB);
 SCORE ScoreProfPos2NS(const ProfPos &PPA, const ProfPos &PPB);
 SCORE ScoreProfPos2SP(const ProfPos &PPA, const ProfPos &PPB);
+SCORE ScoreProfPos2SPN(const ProfPos &PPA, const ProfPos &PPB);
 
 #endif // FastProf_h

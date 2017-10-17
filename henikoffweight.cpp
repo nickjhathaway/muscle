@@ -27,9 +27,9 @@ void MSA::CalcHenikoffWeightsCol(unsigned uColIndex) const
 	unsigned uDifferentLetterCount = 0;
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
-		if (IsWildcard(uSeqIndex, uColIndex))
+		unsigned uLetter = GetLetterEx(uSeqIndex, uColIndex);
+		if (uLetter >= 20)
 			continue;
-		unsigned uLetter = GetLetter(uSeqIndex, uColIndex);
 		unsigned uNewCount = uLetterCount[uLetter] + 1;
 		uLetterCount[uLetter] = uNewCount;
 		if (1 == uNewCount)
@@ -43,7 +43,10 @@ void MSA::CalcHenikoffWeightsCol(unsigned uColIndex) const
 		if (uLetter >= 20)
 			continue;
 		const unsigned uCount = uLetterCount[uLetter];
-		m_Weights[uSeqIndex] += (WEIGHT) (1.0/(uCount*uDifferentLetterCount));
+		unsigned uDenom = uCount*uDifferentLetterCount;
+		if (uDenom == 0)
+			continue;
+		m_Weights[uSeqIndex] += (WEIGHT) (1.0/uDenom);
 		}
 	}
 

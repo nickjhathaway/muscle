@@ -8,7 +8,18 @@
 
 #define TRACE		0
 
-static void MakeNode(const ProgNode &OldNode, ProgNode &NewNode, bool bSwapLR)
+void DeleteProgNode(ProgNode &Node)
+	{
+	delete[] Node.m_Prof;
+	delete[] Node.m_EstringL;
+	delete[] Node.m_EstringR;
+
+	Node.m_Prof = 0;
+	Node.m_EstringL = 0;
+	Node.m_EstringR = 0;
+	}
+
+static void MakeNode(ProgNode &OldNode, ProgNode &NewNode, bool bSwapLR)
 	{
 	if (bSwapLR)
 		{
@@ -23,6 +34,10 @@ static void MakeNode(const ProgNode &OldNode, ProgNode &NewNode, bool bSwapLR)
 	NewNode.m_Prof = OldNode.m_Prof;
 	NewNode.m_uLength = OldNode.m_uLength;
 	NewNode.m_Weight = OldNode.m_Weight;
+
+	OldNode.m_Prof = 0;
+	OldNode.m_EstringL = 0;
+	OldNode.m_EstringR = 0;
 	}
 
 void RealignDiffsE(const MSA &msaIn, const SeqVect &v,
@@ -49,7 +64,7 @@ void RealignDiffsE(const MSA &msaIn, const SeqVect &v,
 		assert(uOldNodeIndex < uNodeCount);
 
 		ProgNode &NewNode = NewProgNodes[uNewNodeIndex];
-		const ProgNode &OldNode = OldProgNodes[uOldNodeIndex];
+		ProgNode &OldNode = OldProgNodes[uOldNodeIndex];
 		bool bSwapLR = false;
 		if (!NewTree.IsLeaf(uNewNodeIndex))
 			{
@@ -104,6 +119,7 @@ void RealignDiffsE(const MSA &msaIn, const SeqVect &v,
 
 		delete[] Node1.m_Prof;
 		delete[] Node2.m_Prof;
+
 		Node1.m_Prof = 0;
 		Node2.m_Prof = 0;
 		}
@@ -118,6 +134,9 @@ void RealignDiffsE(const MSA &msaIn, const SeqVect &v,
 #if	DEBUG
 	AssertMSAEqIgnoreCaseAndGaps(msaIn, msaOut);
 #endif
+
+	for (unsigned uNodeIndex = 0; uNodeIndex < uNodeCount; ++uNodeIndex)
+		DeleteProgNode(NewProgNodes[uNodeIndex]);
 
 	delete[] NewProgNodes;
 	}

@@ -10,7 +10,7 @@
 
 void Refine()
 	{
-	SetOutputFileName(g_pstrInFileName);
+	SetOutputFileName(g_pstrOutFileName);
 	SetInputFileName(g_pstrInFileName);
 	SetStartTime();
 
@@ -36,8 +36,12 @@ void Refine()
 		Alpha = ALPHA_Amino;
 		break;
 
-	case SEQTYPE_Nucleo:
-		Alpha = ALPHA_Nucleo;
+	case SEQTYPE_DNA:
+		Alpha = ALPHA_DNA;
+		break;
+
+	case SEQTYPE_RNA:
+		Alpha = ALPHA_RNA;
 		break;
 
 	default:
@@ -46,7 +50,7 @@ void Refine()
 	SetAlpha(Alpha);
 	msa.FixAlpha();
 
-	if (ALPHA_Nucleo == Alpha)
+	if (ALPHA_DNA == Alpha || ALPHA_RNA == Alpha)
 		SetPPScore(PPSCORE_SPN);
 
 	MSA::SetIdCount(uSeqCount);
@@ -69,6 +73,7 @@ void Refine()
 	ValidateMuscleIds(msa);
 	ValidateMuscleIds(GuideTree);
 
-	TextFile fileOut(g_pstrOutFileName, true);
-	msa.ToFile(fileOut);
+//	TextFile fileOut(g_pstrOutFileName, true);
+//	msa.ToFile(fileOut);
+	MuscleOutput(msa);
 	}

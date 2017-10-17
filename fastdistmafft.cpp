@@ -273,6 +273,7 @@ void DistKmer6_6(const SeqVect &v, DistFunc &DF)
 	for (unsigned n = 0; n < uSeqCount; ++n)
 		delete[] uCommonTupleCount[n];
 	delete[] uCommonTupleCount;
+	delete[] Letters;
 	}
 
 double PctIdToMAFFTDist(double dPctId)
