@@ -51,6 +51,20 @@ SCORE ScoreProfPos2SP(const ProfPos &PPA, const ProfPos &PPB)
 	return Score - g_scoreCenter;
 	}
 
+SCORE ScoreProfPos2SPN(const ProfPos &PPA, const ProfPos &PPB)
+	{
+	SCORE Score = 0;
+	for (unsigned n = 0; n < 4; ++n)
+		{
+		const unsigned uLetter = PPA.m_uSortOrder[n];
+		const FCOUNT fcLetter = PPA.m_fcCounts[uLetter];
+		if (0 == fcLetter)
+			break;
+		Score += fcLetter*PPB.m_AAScores[uLetter];
+		}
+	return Score - g_scoreCenter;
+	}
+
 static const char *LocalScoreToStr(SCORE s)
 	{
 	static char str[16];
@@ -66,7 +80,7 @@ static char ConsensusChar(const ProfPos &PP)
 	FCOUNT fcMostCommon = PP.m_fcCounts[0];
 	bool bMoreThanOneLetter = false;
 	bool bAnyLetter = false;
-	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
+	for (unsigned uLetter = 0; uLetter < g_AlphaSize; ++uLetter)
 		{
 		const FCOUNT fc = PP.m_fcCounts[uLetter];
 		if (fc > 0)
@@ -83,9 +97,9 @@ static char ConsensusChar(const ProfPos &PP)
 		}
 	if (!bAnyLetter)
 		return '-';
-	char c = LetterToCharAmino(uMostCommonLetter);
+	char c = LetterToChar(uMostCommonLetter);
 	if (bMoreThanOneLetter)
-		return tolower(c);
+		return UnalignChar(c);
 	return c;
 	}
 
@@ -121,6 +135,8 @@ SCORE ScoreProfPos2(const ProfPos &PPA, const ProfPos &PPB)
 		return ScoreProfPos2LA(PPA, PPB);
 	else if (PPSCORE_SV == g_PPScore)
 		return ScoreProfPos2SP(PPA, PPB);
+	else if (PPSCORE_SPN == g_PPScore)
+		return ScoreProfPos2SPN(PPA, PPB);
 	Quit("Invalid g_PPScore");
 	return 0;
 	}

@@ -2,65 +2,52 @@
 #include "profile.h"
 #include "diaglist.h"
 
-#define TRACE	0
+#define TRACE	1
 
-const unsigned KTUP = 5;
-const unsigned KTUPS = 6*6*6*6*6;
+#define pow4(i)	(1 << (2*i))	// 4^i = 2^(2*i)
+const unsigned K = 7;
+const unsigned KTUPS = pow4(K);
 static unsigned TuplePos[KTUPS];
 
 static char *TupleToStr(int t)
 	{
-	static char s[7];
-	int t1, t2, t3, t4, t5;
+	static char s[K];
 
-	t1 = t%6;
-	t2 = (t/6)%6;
-	t3 = (t/(6*6))%6;
-	t4 = (t/(6*6*6))%6;
-	t5 = (t/(6*6*6*6))%6;
+	for (int i = 0; i < K; ++i)
+		{
+		unsigned Letter = (t/(pow4(i)))%4;
+		assert(Letter >= 0 && Letter < 4);
+		s[K-i-1] = LetterToChar(Letter);
+		}
 
-	s[4] = '0' + t1;
-	s[3] = '0' + t2;
-	s[2] = '0' + t3;
-	s[1] = '0' + t4;
-	s[0] = '0' + t5;
 	return s;
 	}
 
 static unsigned GetTuple(const ProfPos *PP, unsigned uPos)
 	{
-	const unsigned t0 = PP[uPos].m_uResidueGroup;
-	if (RESIDUE_GROUP_MULTIPLE == t0)
-		return EMPTY;
+	unsigned t = 0;
 
-	const unsigned t1 = PP[uPos+1].m_uResidueGroup;
-	if (RESIDUE_GROUP_MULTIPLE == t1)
-		return EMPTY;
+	for (unsigned i = 0; i < K; ++i)
+		{
+		const unsigned uLetter = PP[uPos+i].m_uResidueGroup;
+		if (RESIDUE_GROUP_MULTIPLE == uLetter)
+			return EMPTY;
+		t = t*4 + uLetter;
+		}
 
-	const unsigned t2 = PP[uPos+2].m_uResidueGroup;
-	if (RESIDUE_GROUP_MULTIPLE == t2)
-		return EMPTY;
-
-	const unsigned t3 = PP[uPos+3].m_uResidueGroup;
-	if (RESIDUE_GROUP_MULTIPLE == t3)
-		return EMPTY;
-
-	const unsigned t4 = PP[uPos+4].m_uResidueGroup;
-	if (RESIDUE_GROUP_MULTIPLE == t4)
-		return EMPTY;
-
-	return t0 + t1*6 + t2*6*6 + t3*6*6*6 + t4*6*6*6*6;
+	return t;
 	}
 
-void FindDiags(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
+void FindDiagsNuc(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
   unsigned uLengthY, DiagList &DL)
 	{
-	if (ALPHA_Amino != g_Alpha)
-		Quit("FindDiags: requires amino acid alphabet");
+	if (ALPHA_Nucleo != g_Alpha)
+		Quit("FindDiagsNuc: requires nucleotide alphabet");
 
 	DL.Clear();
 
-	if (uLengthX < 12 || uLengthY < 12)
+// 16 is arbitrary slop, no principled reason for this.
+	if (uLengthX < K + 16 || uLengthY < K + 16)
 		return;
 
 // Set A to shorter profile, B to longer
@@ -87,12 +74,12 @@ void FindDiags(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
 		}
 
 // Build tuple map for the longer profile, B
-	if (uLengthB < KTUP)
+	if (uLengthB < K)
 		Quit("FindDiags: profile too short");
 
 	memset(TuplePos, EMPTY, sizeof(TuplePos));
 
-	for (unsigned uPos = 0; uPos < uLengthB - KTUP; ++uPos)
+	for (unsigned uPos = 0; uPos < uLengthB - K; ++uPos)
 		{
 		const unsigned uTuple = GetTuple(PB, uPos);
 		if (EMPTY == uTuple)
@@ -101,7 +88,7 @@ void FindDiags(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
 		}
 
 // Find matches
-	for (unsigned uPosA = 0; uPosA < uLengthA - KTUP; ++uPosA)
+	for (unsigned uPosA = 0; uPosA < uLengthA - K; ++uPosA)
 		{
 		const unsigned uTuple = GetTuple(PA, uPosA);
 		if (EMPTY == uTuple)
@@ -115,8 +102,8 @@ void FindDiags(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
 		unsigned uStartPosB = uPosB;
 
 	// Try to extend the match forwards
-		unsigned uEndPosA = uPosA + KTUP - 1;
-		unsigned uEndPosB = uPosB + KTUP - 1;
+		unsigned uEndPosA = uPosA + K - 1;
+		unsigned uEndPosB = uPosB + K - 1;
 		for (;;)
 			{
 			if (uLengthA - 1 == uEndPosA || uLengthB - 1 == uEndPosB)
@@ -138,11 +125,11 @@ void FindDiags(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
 		{
 		Log("Match: A %4u-%4u   ", uStartPosA, uEndPosA);
 		for (unsigned n = uStartPosA; n <= uEndPosA; ++n)
-			Log("%c", 'A' + PA[n].m_uResidueGroup);
+			Log("%c", LetterToChar(PA[n].m_uResidueGroup));
 		Log("\n");
 		Log("       B %4u-%4u   ", uStartPosB, uEndPosB);
 		for (unsigned n = uStartPosB; n <= uEndPosB; ++n)
-			Log("%c", 'A' + PB[n].m_uResidueGroup);
+			Log("%c", LetterToChar(PB[n].m_uResidueGroup));
 		Log("\n");
 		}
 #endif

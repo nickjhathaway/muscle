@@ -2,11 +2,6 @@
 #include "objscore.h"
 #include "profile.h"
 #include "enumopts.h"
-#ifdef	WIN32
-#include <io.h>	// for isatty()
-#else
-#include <unistd.h>	// for isatty()
-#endif
 
 SCORE g_scoreCenter = 0;
 SCORE g_scoreGapExtend = 0;
@@ -31,7 +26,7 @@ unsigned g_uMaxTreeRefineIters = 1;
 unsigned g_uHydrophobicRunLength = 5;
 float g_dHydroFactor = (float) 1.2;
 
-unsigned g_uMinDiagLength = 24;
+unsigned g_uMinDiagLength = 24;	// TODO alpha -- should depend on alphabet?
 unsigned g_uMaxDiagBreak = 1;
 unsigned g_uDiagMargin = 5;
 
@@ -54,6 +49,9 @@ bool g_bCluster = false;
 bool g_bProfile = false;
 bool g_bBrenner = false;
 bool g_bDimer = false;
+bool g_bVersion = false;
+bool g_bStable = false;
+bool g_bFASTA = true;
 
 #if	DEBUG
 bool g_bCatchExceptions = false;
@@ -63,6 +61,7 @@ bool g_bCatchExceptions = true;
 
 bool g_bMSF = false;
 bool g_bAln = false;
+bool g_bClwStrict = false;
 bool g_bHTML = false;
 
 unsigned g_uMaxIters = 16;
@@ -84,6 +83,8 @@ ROOT g_Root1 = ROOT_Pseudo;
 ROOT g_Root2 = ROOT_Pseudo;
 
 bool g_bDiags;
+
+SEQTYPE g_SeqType = SEQTYPE_Auto;
 
 //------------------------------------------------------
 // These parameters depending on the chosen prof-prof
@@ -180,7 +181,7 @@ static void SetDefaultsLE()
 	g_dMinSmoothScore = 1.0;
 	}
 
-void SetDefaultsSP()
+static void SetDefaultsSP()
 	{
 	g_scoreGapOpen = -1439;
 	g_scoreCenter = 0.0;	// center pre-added into score mx
@@ -202,6 +203,18 @@ static void SetDefaultsSV()
 	g_dSmoothScoreCeil = 90.0;
 	g_dMinBestColScore = 130.0;
 	g_dMinSmoothScore = 40.0;
+	}
+
+static void SetDefaultsSPN()
+	{
+	g_scoreGapOpen = -400;
+	g_scoreCenter = 0.0;	// center pre-added into score mx
+
+	g_bNormalizeCounts = false;
+
+	g_dSmoothScoreCeil = 999.0;		// disable
+	g_dMinBestColScore = 90;
+	g_dMinSmoothScore = 90;
 	}
 
 static void FlagParam(const char *OptName, bool *ptrParam, bool bValueIfFlagSet)
@@ -259,6 +272,8 @@ static void SetPPScore()
 		g_PPScore = PPSCORE_LE;
 	else if (FlagOpt("SV"))
 		g_PPScore = PPSCORE_SV;
+	else if (FlagOpt("SPN"))
+		g_PPScore = PPSCORE_SPN;
 
 	switch (g_PPScore)
 		{
@@ -272,6 +287,10 @@ static void SetPPScore()
 
 	case PPSCORE_SV:
 		SetDefaultsSV();
+		break;
+
+	case PPSCORE_SPN:
+		SetDefaultsSPN();
 		break;
 
 	default:
@@ -308,7 +327,7 @@ static bool CanDoLowComplexity()
 	return g_SeqWeight2 == SEQWEIGHT_ClustalW;
 	}
 
-static bool MissingCommand()
+bool MissingCommand()
 	{
 	if (strcmp(g_pstrInFileName, "-"))
 		return false;
@@ -345,9 +364,13 @@ void SetParams()
 	FlagParam("Diags2", &g_bDiags2, true);
 
 	FlagParam("Anchors", &g_bAnchors, true);
+	FlagParam("NoAnchors", &g_bAnchors, false);
 
 	FlagParam("Quiet", &g_bQuiet, true);
 	FlagParam("Verbose", &g_bVerbose, true);
+	FlagParam("Version", &g_bVersion, true);
+	FlagParam("Stable", &g_bStable, true);
+	FlagParam("Group", &g_bStable, false);
 	FlagParam("Refine", &g_bRefine, true);
 	FlagParam("SW", &g_bSW, true);
 	FlagParam("Cluster", &g_bCluster, true);
@@ -359,6 +382,15 @@ void SetParams()
 	FlagParam("MSF", &g_bMSF, true);
 	FlagParam("clw", &g_bAln, true);
 	FlagParam("HTML", &g_bHTML, true);
+	FlagParam("FASTA", &g_bFASTA, true);
+
+	bool b = false;
+	FlagParam("clwstrict", &b, true);
+	if (b)
+		{
+		g_bAln = true;
+		g_bClwStrict = true;
+		}
 
 	UintParam("MaxIters", &g_uMaxIters);
 	UintParam("MaxTrees", &g_uMaxTreeRefineIters);
@@ -393,15 +425,11 @@ void SetParams()
 	EnumParam("Root1", ROOT_Opts, (int *) &g_Root1);
 	EnumParam("Root2", ROOT_Opts, (int *) &g_Root2);
 
+	EnumParam("SeqType", SEQTYPE_Opts, (int *) &g_SeqType);
+
 	g_scoreGapAmbig = g_scoreGapOpen*g_scoreAmbigFactor;
 	g_bLow = CanDoLowComplexity();
 
 	if (g_bDimer)
 		g_bPrecompiledCenter = false;
-
-	if (MissingCommand() && isatty(0))
-		{
-		Usage();
-		exit(0);
-		}
 	}

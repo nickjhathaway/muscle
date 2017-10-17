@@ -19,6 +19,9 @@ MSA::MSA()
 
 	m_IdToSeqIndex = 0;
 	m_SeqIndexToId = 0;
+
+	m_uCacheSeqCount = 0;
+	m_uCacheSeqLength = 0;
 	}
 
 MSA::~MSA()
@@ -31,7 +34,7 @@ void MSA::Free()
 	for (unsigned n = 0; n < m_uSeqCount; ++n)
 		{
 		delete[] m_szSeqs[n];
-		free(m_szNames[n]);
+		delete[] m_szNames[n];
 		}
 
 	delete[] m_szSeqs;
@@ -70,8 +73,10 @@ void MSA::SetSize(unsigned uSeqCount, unsigned uColCount)
 		{
 		m_szSeqs[uSeqIndex] = new char[uColCount+1];
 		m_szNames[uSeqIndex] = 0;
+#if	DEBUG
 		m_Weights[uSeqIndex] = BTInsane;
 		memset(m_szSeqs[uSeqIndex], '?', uColCount);
+#endif
 		m_szSeqs[uSeqIndex][uColCount] = 0;
 		}
 
@@ -79,9 +84,10 @@ void MSA::SetSize(unsigned uSeqCount, unsigned uColCount)
 		{
 		m_IdToSeqIndex = new unsigned[m_uIdCount];
 		m_SeqIndexToId = new unsigned[m_uSeqCount];
-
+#if	DEBUG
 		memset(m_IdToSeqIndex, 0xff, m_uIdCount*sizeof(unsigned));
 		memset(m_SeqIndexToId, 0xff, m_uSeqCount*sizeof(unsigned));
+#endif
 		}
 	}
 
@@ -145,7 +151,7 @@ unsigned MSA::GetLetter(unsigned uSeqIndex, unsigned uIndex) const
 	{
 // TODO: Performance cost?
 	char c = GetChar(uSeqIndex, uIndex);
-	unsigned uLetter = CharToLetterAmino(c);
+	unsigned uLetter = CharToLetter(c);
 	if (uLetter >= 20)
 		Quit("MSA::GetLetter=%u", uLetter);
 	return uLetter;
@@ -155,7 +161,7 @@ unsigned MSA::GetLetterEx(unsigned uSeqIndex, unsigned uIndex) const
 	{
 // TODO: Performance cost?
 	char c = GetChar(uSeqIndex, uIndex);
-	unsigned uLetter = CharToLetterX(c);
+	unsigned uLetter = CharToLetterEx(c);
 	return uLetter;
 	}
 
@@ -163,8 +169,10 @@ void MSA::SetSeqName(unsigned uSeqIndex, const char szName[])
 	{
 	if (uSeqIndex >= m_uSeqCount)
 		Quit("MSA::SetSeqName(%u, %s), count=%u", uSeqIndex, m_uSeqCount);
-	free(m_szNames[uSeqIndex]);
-	m_szNames[uSeqIndex] = strdup(szName);
+	delete[] m_szNames[uSeqIndex];
+	int n = (int) strlen(szName) + 1;
+	m_szNames[uSeqIndex] = new char[n];
+	memcpy(m_szNames[uSeqIndex], szName, n);
 	}
 
 const char *MSA::GetSeqName(unsigned uSeqIndex) const
@@ -177,13 +185,13 @@ const char *MSA::GetSeqName(unsigned uSeqIndex) const
 bool MSA::IsGap(unsigned uSeqIndex, unsigned uIndex) const
 	{
 	char c = GetChar(uSeqIndex, uIndex);
-	return ::IsGap(c);
+	return IsGapChar(c);
 	}
 
 bool MSA::IsWildcard(unsigned uSeqIndex, unsigned uIndex) const
 	{
 	char c = GetChar(uSeqIndex, uIndex);
-	return ::IsWildcard(c);
+	return IsWildcardChar(c);
 	}
 
 void MSA::SetChar(unsigned uSeqIndex, unsigned uIndex, char c)
@@ -275,7 +283,7 @@ void MSA::Copy(const MSA &msa)
 
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
-		m_szNames[uSeqIndex] = strdup(msa.GetSeqName(uSeqIndex));
+		SetSeqName(uSeqIndex, msa.GetSeqName(uSeqIndex));
 		const unsigned uId = msa.GetSeqId(uSeqIndex);
 		SetSeqId(uSeqIndex, uId);
 		for (unsigned uColIndex = 0; uColIndex < uColCount; ++uColIndex)
@@ -329,14 +337,7 @@ void MSA::DeleteColumns(unsigned uColIndex, unsigned uColCount)
 
 void MSA::FromFile(TextFile &File)
 	{
-	char c = 0;
-	bool bEof = File.GetChar(c);
-	assert(!bEof);
-	File.Rewind();
-	if ('>' == c)
-		FromFASTAFile(File);
-	else
-		FromMSFFile(File);
+	FromFASTAFile(File);
 	}
 
 // Weights sum to 1, WCounts sum to NIC
@@ -445,7 +446,7 @@ void MSA::CopySeq(unsigned uToSeqIndex, const MSA &msaFrom, unsigned uFromSeqInd
 	  (0 == m_uColCount && uColCount <= m_uCacheSeqLength));
 
 	memcpy(m_szSeqs[uToSeqIndex], msaFrom.GetSeqBuffer(uFromSeqIndex), uColCount);
-	m_szNames[uToSeqIndex] = strdup(msaFrom.GetSeqName(uFromSeqIndex));
+	SetSeqName(uToSeqIndex, msaFrom.GetSeqName(uFromSeqIndex));
 	if (0 == m_uColCount)
 		m_uColCount = uColCount;
 	}
@@ -557,10 +558,10 @@ void MSA::GetPWID(unsigned uSeqIndex1, unsigned uSeqIndex2, double *ptrPWID,
 	for (unsigned uColIndex = 0; uColIndex < uColCount; ++uColIndex)
 		{
 		char c1 = GetChar(uSeqIndex1, uColIndex);
-		if (::IsGap(c1))
+		if (IsGapChar(c1))
 			continue;
 		char c2 = GetChar(uSeqIndex2, uColIndex);
-		if (::IsGap(c2))
+		if (IsGapChar(c2))
 			continue;
 		++uPosCount;
 		if (c1 == c2)
@@ -588,13 +589,13 @@ unsigned MSA::UniqueResidueTypes(unsigned uColIndex) const
 	const unsigned uSeqCount = GetSeqCount();
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
-		if (IsGap(uSeqIndex, uColIndex))
+		if (IsGap(uSeqIndex, uColIndex) || IsWildcard(uSeqIndex, uColIndex))
 			continue;
 		const unsigned uLetter = GetLetter(uSeqIndex, uColIndex);
 		++(Counts[uLetter]);
 		}
 	unsigned uUniqueCount = 0;
-	for (unsigned uLetter = 0; uLetter < MAX_ALPHA; ++uLetter)
+	for (unsigned uLetter = 0; uLetter < g_AlphaSize; ++uLetter)
 		if (Counts[uLetter] > 0)
 			++uUniqueCount;
 	return uUniqueCount;
@@ -700,4 +701,111 @@ void MSASubsetByIds(const MSA &msaIn, const unsigned Ids[], unsigned uIdCount,
 			msaOut.SetChar(uSeqIndexOut, uColIndex, c);
 			}
 		}
+	}
+
+// Caller must allocate ptrSeq and ptrLabel as new char[n].
+void MSA::AppendSeq(char *ptrSeq, unsigned uSeqLength, char *ptrLabel)
+	{
+	if (m_uSeqCount > m_uCacheSeqCount)
+		Quit("Internal error MSA::AppendSeq");
+	if (m_uSeqCount == m_uCacheSeqCount)
+		ExpandCache(m_uSeqCount + 512, uSeqLength);
+	m_szSeqs[m_uSeqCount] = ptrSeq;
+	m_szNames[m_uSeqCount] = ptrLabel;
+	++m_uSeqCount;
+	}
+
+void MSA::ExpandCache(unsigned uSeqCount, unsigned uColCount)
+	{
+	if (m_IdToSeqIndex != 0 || m_SeqIndexToId != 0 || uSeqCount < m_uSeqCount)
+		Quit("Internal error MSA::ExpandCache");
+
+	if (m_uSeqCount > 0 && uColCount != m_uColCount)
+		Quit("Internal error MSA::ExpandCache, ColCount changed");
+
+	char **NewSeqs = new char *[uSeqCount];
+	char **NewNames = new char *[uSeqCount];
+	WEIGHT *NewWeights = new WEIGHT[uSeqCount];
+
+	for (unsigned uSeqIndex = 0; uSeqIndex < m_uSeqCount; ++uSeqIndex)
+		{
+		NewSeqs[uSeqIndex] = m_szSeqs[uSeqIndex];
+		NewNames[uSeqIndex] = m_szNames[uSeqIndex];
+		NewWeights[uSeqIndex] = m_Weights[uSeqIndex];
+		}
+
+	for (unsigned uSeqIndex = m_uSeqCount; uSeqIndex < uSeqCount; ++uSeqIndex)
+		{
+		char *Seq = new char[uColCount];
+		NewSeqs[uSeqIndex] = Seq;
+#if	DEBUG
+		memset(Seq, '?', uColCount);
+#endif
+		}
+
+	delete[] m_szSeqs;
+	delete[] m_szNames;
+	delete[] m_Weights;
+
+	m_szSeqs = NewSeqs;
+	m_szNames = NewNames;
+	m_Weights = NewWeights;
+
+	m_uCacheSeqCount = uSeqCount;
+	m_uCacheSeqLength = uColCount;
+	m_uColCount = uColCount;
+	}
+
+void MSA::FixAlpha()
+	{
+	for (unsigned uSeqIndex = 0; uSeqIndex < m_uSeqCount; ++uSeqIndex)
+		{
+		for (unsigned uColIndex = 0; uColIndex < m_uColCount; ++uColIndex)
+			{
+			char c = GetChar(uSeqIndex, uColIndex);
+			if (!IsResidueChar(c) && !IsGapChar(c))
+				{
+				char w = GetWildcardChar();
+				Warning("Invalid residue '%c', replaced by '%c'", c, w);
+				SetChar(uSeqIndex, uColIndex, w);
+				}
+			}
+		}
+	}
+
+ALPHA MSA::GuessAlpha() const
+	{
+// If at least MIN_NUCLEO_PCT of the first CHAR_COUNT non-gap
+// letters belong to the nucleotide alphabet, guess nucleo.
+// Otherwise amino.
+	const unsigned CHAR_COUNT = 100;
+	const unsigned MIN_NUCLEO_PCT = 95;
+
+	const unsigned uSeqCount = GetSeqCount();
+	const unsigned uColCount = GetColCount();
+	if (0 == uSeqCount)
+		return ALPHA_Amino;
+
+	unsigned uNucleoCount = 0;
+	unsigned uTotal = 0;
+	unsigned i = 0;
+	for (;;)
+		{
+		unsigned uSeqIndex = i/uColCount;
+		if (uSeqIndex >= uSeqCount)
+			break;
+		unsigned uColIndex = i%uColCount;
+		++i;
+		char c = GetChar(uSeqIndex, uColIndex);
+		if (IsGapChar(c))
+			continue;
+		if (IsNucleo(c))
+			++uNucleoCount;
+		++uTotal;
+		if (uTotal >= CHAR_COUNT)
+			break;
+		}
+	if (uTotal != 0 && ((uNucleoCount*100)/uTotal) >= MIN_NUCLEO_PCT)
+		return ALPHA_Nucleo;
+	return ALPHA_Amino;
 	}

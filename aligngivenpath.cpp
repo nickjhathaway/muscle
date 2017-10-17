@@ -7,14 +7,14 @@
 
 static void LogPP(const ProfPos &PP)
 	{
-	Log("AminoGroup   %u\n", PP.m_uAminoGroup);
+	Log("ResidueGroup   %u\n", PP.m_uResidueGroup);
 	Log("AllGaps      %d\n", PP.m_bAllGaps);
 	Log("Occ          %.3g\n", PP.m_fOcc);
 	Log("LL=%.3g LG=%.3g GL=%.3g GG=%.3g\n", PP.m_LL, PP.m_LG, PP.m_GL, PP.m_GG);
 	Log("Freqs        ");
 	for (unsigned i = 0; i < 20; ++i)
 		if (PP.m_fcCounts[i] > 0)
-			Log("%c=%.3g ", LetterToCharAmino(i), PP.m_fcCounts[i]);
+			Log("%c=%.3g ", LetterToChar(i), PP.m_fcCounts[i]);
 	Log("\n");
 	}
 
@@ -25,7 +25,7 @@ static void AssertProfPosEq(const ProfPos *PA, const ProfPos *PB, unsigned i)
 #define	eq(x)	if (PPA.m_##x != PPB.m_##x) { LogPP(PPA); LogPP(PPB); Quit("AssertProfPosEq." #x); }
 #define be(x)	if (!BTEq(PPA.m_##x, PPB.m_##x)) { LogPP(PPA); LogPP(PPB); Quit("AssertProfPosEq." #x); }
 	eq(bAllGaps)
-	eq(uAminoGroup)
+	eq(uResidueGroup)
 
 	be(LL)
 	be(LG)
@@ -92,7 +92,7 @@ static void ScoresFromFreqsPos(ProfPos *Prof, unsigned uLength, unsigned uPos)
 	{
 	ProfPos &PP = Prof[uPos];
 	SortCounts(PP.m_fcCounts, PP.m_uSortOrder);
-	PP.m_uAminoGroup = AminoGroupFromFCounts(PP.m_fcCounts);
+	PP.m_uResidueGroup = ResidueGroupFromFCounts(PP.m_fcCounts);
 
 // "Occupancy"
 	PP.m_fOcc = PP.m_LL + PP.m_GL;
@@ -122,10 +122,10 @@ static void ScoresFromFreqsPos(ProfPos *Prof, unsigned uLength, unsigned uPos)
 	else
 		PP.m_scoreGapClose = 0;
 
-	for (unsigned i = 0; i < 20; ++i)
+	for (unsigned i = 0; i < g_AlphaSize; ++i)
 		{
 		SCORE scoreSum = 0;
-		for (unsigned j = 0; j < 20; ++j)
+		for (unsigned j = 0; j < g_AlphaSize; ++j)
 			scoreSum += PP.m_fcCounts[j]*(*g_ptrScoreMatrix)[i][j];
 		PP.m_AAScores[i] = scoreSum;
 		}
@@ -386,7 +386,7 @@ static const ProfPos PPStart =
 	0.0,	// m_GL;
 	0.0,	// m_GG;
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // m_ALScores
-	0,		// m_uAminoGroup;
+	0,		// m_uResidueGroup;
 	1.0,	// m_fOcc;
 	0.0,	// m_fcStartOcc;
 	0.0,	// m_fcEndOcc;

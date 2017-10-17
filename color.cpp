@@ -93,7 +93,7 @@ static double BlosumScoreCol(const MSA &a, unsigned uColIndex)
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
 		char c = a.GetChar(uSeqIndex, uColIndex);
-		if (IsGap(c))
+		if (IsGapChar(c))
 			continue;
 		int iChar = toi(c);
 		++iCounts[iChar];
@@ -127,7 +127,7 @@ static void AssignColorsCol(const MSA &a, unsigned uColIndex, int **Colors)
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
 		char c = a.GetChar(uSeqIndex, uColIndex);
-		if (::IsGap(c))
+		if (IsGapChar(c))
 			continue;
 		int iChar = toi(c);
 		++iCounts[iChar];
@@ -168,7 +168,7 @@ static void AssignColorsCol(const MSA &a, unsigned uColIndex, int **Colors)
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
 		char c = a.GetChar(uSeqIndex, uColIndex);
-		if (::IsGap(c))
+		if (IsGapChar(c))
 			{
 			Colors[uSeqIndex][uColIndex] = 0;
 			continue;

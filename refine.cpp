@@ -22,6 +22,33 @@ void Refine()
 	msa.FromFile(fileIn);
 
 	const unsigned uSeqCount = msa.GetSeqCount();
+	if (0 == uSeqCount)
+		Quit("No sequences in input file");
+
+	ALPHA Alpha = ALPHA_Undefined;
+	switch (g_SeqType)
+		{
+	case SEQTYPE_Auto:
+		Alpha = msa.GuessAlpha();
+		break;
+
+	case SEQTYPE_Protein:
+		Alpha = ALPHA_Amino;
+		break;
+
+	case SEQTYPE_Nucleo:
+		Alpha = ALPHA_Nucleo;
+		break;
+
+	default:
+		Quit("Invalid SeqType");
+		}
+	SetAlpha(Alpha);
+	msa.FixAlpha();
+
+	if (ALPHA_Nucleo == Alpha)
+		SetPPScore(PPSCORE_SPN);
+
 	MSA::SetIdCount(uSeqCount);
 
 // Initialize sequence ids.

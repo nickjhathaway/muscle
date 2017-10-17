@@ -1,7 +1,6 @@
 #ifndef diaglist_h
 #define diaglist_h
 
-const unsigned KTUP = 5;
 const unsigned EMPTY = (unsigned) ~0;
 const unsigned MAX_DIAGS = 100;
 
@@ -82,6 +81,8 @@ bool DiagCompatible(const Diag &d1, const Diag &d2);
 void CheckDiags(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, const MSA &msaA, const MSA &msaB, const PWPath &Path);
 void FindDiags(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
+  unsigned uLengthY, DiagList &DL);
+void FindDiagsNuc(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
   unsigned uLengthY, DiagList &DL);
 void MergeDiags(DiagList &DL);
 

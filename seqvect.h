@@ -44,9 +44,13 @@ public:
 	void LogMe() const;
 	const char *GetSeqName(unsigned uSeqIndex) const;
 	unsigned GetSeqId(unsigned uSeqIndex) const;
+	unsigned GetSeqLength(unsigned uSeqIndex) const;
 	void SetSeqId(unsigned uSeqIndex, unsigned uId);
 	Seq &GetSeq(unsigned uIndex);
 	const Seq &GetSeq(unsigned uIndex) const;
+
+	ALPHA GuessAlpha() const;
+	void FixAlpha();
 
 #ifndef	_WIN32
 	reference at(size_type i) { return operator[](i); }

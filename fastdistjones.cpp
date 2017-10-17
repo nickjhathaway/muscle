@@ -47,13 +47,13 @@ void DistKmer20_3(const SeqVect &v, DistFunc &DF)
 		const unsigned uSeqLength = s.Length();
 		for (unsigned uPos = 0; uPos < uSeqLength - 2; ++uPos)
 			{
-			const unsigned uLetter1 = CharToLetterAminoEx[s[uPos]];
+			const unsigned uLetter1 = CharToLetterEx(s[uPos]);
 			if (uLetter1 >= 20)
 				continue;
-			const unsigned uLetter2 = CharToLetterAminoEx[s[uPos+1]];
+			const unsigned uLetter2 = CharToLetterEx(s[uPos+1]);
 			if (uLetter2 >= 20)
 				continue;
-			const unsigned uLetter3 = CharToLetterAminoEx[s[uPos+2]];
+			const unsigned uLetter3 = CharToLetterEx(s[uPos+2]);
 			if (uLetter3 >= 20)
 				continue;
 

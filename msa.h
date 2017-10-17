@@ -18,9 +18,7 @@ public:
 public:
 // Ways to create an MSA
 	void FromFile(TextFile &File);
-	void FromFASTAFile(TextFile &File, bool bFirstOnly = false);
-	void FromMSFFile(TextFile &File);
-	void FromPairMap(const Seq &seqA, const Seq &seqB, int iMapA[], int iMapB[]);
+	void FromFASTAFile(TextFile &File);
 	void FromSeq(const Seq &s);
 
 	void ToFile(TextFile &File) const;
@@ -71,6 +69,9 @@ public:
 	void SetSeqWeight(unsigned uSeqIndex, WEIGHT w) const;
 	void NormalizeWeights(WEIGHT wTotal) const;
 	bool WeightsSet() const;
+
+	ALPHA GuessAlpha() const;
+	void FixAlpha();
 
 	unsigned UniqueResidueTypes(unsigned uColIndex) const;
 
@@ -123,6 +124,8 @@ private:
 	void SetClustalWWeights(const Tree &tree);
 
 	void Free();
+	void AppendSeq(char *ptrSeq, unsigned uSeqLength, char *ptrLabel);
+	void ExpandCache(unsigned uSeqCount, unsigned uColCount);
 	void CalcWeights() const;
 	void GetNameFromFASTAAnnotationLine(const char szLine[],
 	  char szName[], unsigned uBytes);
@@ -140,6 +143,7 @@ private:
 	unsigned m_uSeqCount;
 	unsigned m_uColCount;
 	unsigned m_uCacheSeqLength;
+	unsigned m_uCacheSeqCount;
 	char **m_szSeqs;
 	char **m_szNames;
 

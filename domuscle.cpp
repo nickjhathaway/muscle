@@ -26,6 +26,36 @@ static void Muscle()
 	if (0 == uSeqCount)
 		Quit("No sequences in input file");
 
+	ALPHA Alpha = ALPHA_Undefined;
+	switch (g_SeqType)
+		{
+	case SEQTYPE_Auto:
+		Alpha = v.GuessAlpha();
+		break;
+
+	case SEQTYPE_Protein:
+		Alpha = ALPHA_Amino;
+		break;
+
+	case SEQTYPE_Nucleo:
+		Alpha = ALPHA_Nucleo;
+		break;
+
+	default:
+		Quit("Invalid SeqType");
+		}
+	SetAlpha(Alpha);
+	v.FixAlpha();
+
+	if (ALPHA_Nucleo == Alpha)
+		{
+		SetPPScore(PPSCORE_SPN);
+		g_Distance1 = DISTANCE_Kmer4_6;
+		}
+
+	if (g_bVerbose)
+		ListParams();
+
 	unsigned uMaxL = 0;
 	unsigned uTotL = 0;
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
@@ -155,9 +185,6 @@ void Run()
 	for (int i = 0; i < g_argc; ++i)
 		Log("%s ", g_argv[i]);
 	Log("\n");
-
-	if (g_bVerbose)
-		ListParams();
 
 	if (g_bRefine)
 		Refine();

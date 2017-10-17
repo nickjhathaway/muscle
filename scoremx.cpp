@@ -6,6 +6,7 @@ extern SCOREMATRIX PAM200;
 extern SCOREMATRIX PAM200NoCenter;
 extern SCOREMATRIX VTML_SP;
 extern SCOREMATRIX VTML_SPNoCenter;
+extern SCOREMATRIX NUC_SP;
 
 PTR_SCOREMATRIX g_ptrScoreMatrix;
 
@@ -29,6 +30,13 @@ void SetScoreMatrix()
 			g_ptrScoreMatrix = &VTML_SP;
 		else
 			g_ptrScoreMatrix = &VTML_SPNoCenter;
+		break;
+
+	case PPSCORE_SPN:
+		if (g_bPrecompiledCenter)
+			g_ptrScoreMatrix = &NUC_SP;
+		else
+			Quit("SPN requires precompiled center");
 		break;
 
 	default:

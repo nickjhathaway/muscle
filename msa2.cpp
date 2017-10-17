@@ -21,7 +21,7 @@ void MSA::GetFractionalWeightedCounts(unsigned uColIndex, bool bNormalize,
 	const unsigned uSeqCount = GetSeqCount();
 	const unsigned uColCount = GetColCount();
 
-	memset(fcCounts, 0, MAX_ALPHA*sizeof(FCOUNT));
+	memset(fcCounts, 0, g_AlphaSize*sizeof(FCOUNT));
 	WEIGHT wTotal = 0;
 	FCOUNT fGap = 0;
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
@@ -33,7 +33,55 @@ void MSA::GetFractionalWeightedCounts(unsigned uColIndex, bool bNormalize,
 			continue;
 			}
 		else if (IsWildcard(uSeqIndex, uColIndex))
+			{
+			const unsigned uLetter = GetLetterEx(uSeqIndex, uColIndex);
+			switch (g_Alpha)
+				{
+			case ALPHA_Amino:
+				switch (uLetter)
+					{
+				case AX_B:		// D or N
+					fcCounts[AX_D] += w/2;
+					fcCounts[AX_N] += w/2;
+					break;
+				case AX_Z:		// E or Q
+					fcCounts[AX_E] += w/2;
+					fcCounts[AX_Q] += w/2;
+					break;
+				case AX_X:		// any
+					{
+					const FCOUNT f = w/20;
+					for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
+						fcCounts[uLetter] += f;
+					break;
+					}
+					}
+				break;
+
+			case ALPHA_Nucleo:
+				switch (uLetter)
+					{
+				case AX_R:	// G or A
+					fcCounts[NX_G] += w/2;
+					fcCounts[NX_A] += w/2;
+					break;
+				case AX_Y:	// C or T/U
+					fcCounts[NX_C] += w/2;
+					fcCounts[NX_T] += w/2;
+					break;
+				case AX_N:	// any
+					const FCOUNT f = w/20;
+					for (unsigned uLetter = 0; uLetter < 4; ++uLetter)
+						fcCounts[uLetter] += f;
+					break;
+					}
+				break;
+
+			default:
+				Quit("Alphabet %d not supported", g_Alpha);
+				}
 			continue;
+			}
 		unsigned uLetter = GetLetter(uSeqIndex, uColIndex);
 		fcCounts[uLetter] += w;
 		wTotal += w;
@@ -44,7 +92,7 @@ void MSA::GetFractionalWeightedCounts(unsigned uColIndex, bool bNormalize,
 		{
 		if (wTotal > 1.001)
 			Quit("wTotal=%g\n", wTotal);
-		for (unsigned uLetter = 0; uLetter < MAX_ALPHA; ++uLetter)
+		for (unsigned uLetter = 0; uLetter < g_AlphaSize; ++uLetter)
 			fcCounts[uLetter] /= wTotal;
 //		AssertNormalized(fcCounts);
 		}
@@ -122,7 +170,7 @@ void MSA::GetFractionalWeightedCounts(unsigned uColIndex, bool bNormalize,
 // its residues are in the same biochemical group.
 bool MSAColIsConservative(const MSA &msa, unsigned uColIndex)
 	{
-	extern unsigned AminoGroup[];
+	extern unsigned ResidueGroup[];
 
 	const unsigned uSeqCount = msa.GetColCount();
 	if (0 == uSeqCount)
@@ -132,14 +180,14 @@ bool MSAColIsConservative(const MSA &msa, unsigned uColIndex)
 		return false;
 
 	unsigned uLetter = msa.GetLetterEx(0, uColIndex);
-	const unsigned uGroup = AminoGroup[uLetter];
+	const unsigned uGroup = ResidueGroup[uLetter];
 
 	for (unsigned uSeqIndex = 1; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
 		if (msa.IsGap(uSeqIndex, uColIndex))
 			return false;
 		uLetter = msa.GetLetter(uSeqIndex, uColIndex);
-		if (AminoGroup[uLetter] != uGroup)
+		if (ResidueGroup[uLetter] != uGroup)
 			return false;
 		}
 	return true;

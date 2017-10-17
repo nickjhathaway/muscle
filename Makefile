@@ -1,3 +1,13 @@
+# Porting notes:
+# For non-Intel platforms, change the -march option as appropriate.
+# For Solaris and other platforms where the logf function
+# is missing from the math library, add the following line
+# to the end of muscle.h:
+# #define logf(x)	((float) log(x))
+# Using -static increases the executable size and thus gives a very
+# small increase in start time, but is more portable (the binding
+# to dynamic libraries often breaks when a new library is released).
+
 CFLAGS = -O3 -march=pentiumpro -mcpu=pentiumpro -funroll-loops -Winline -DNDEBUG=1
 LDLIBS = -lm -static
 # LDLIBS = -lm

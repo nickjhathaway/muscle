@@ -57,7 +57,14 @@ SCORE GlobalAlignDiags(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
 #endif
 
 	DiagList DL;
-	FindDiags(PA, uLengthA, PB, uLengthB, DL);
+
+	if (ALPHA_Amino == g_Alpha)
+		FindDiags(PA, uLengthA, PB, uLengthB, DL);
+	else if (ALPHA_Nucleo == g_Alpha)
+		FindDiagsNuc(PA, uLengthA, PB, uLengthB, DL);
+	else
+		Quit("GlobalAlignDiags: bad alpha");
+
 #if	TRACE
 	Log("GlobalAlignDiags, diag list:\n");
 	DL.LogMe();

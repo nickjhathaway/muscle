@@ -2,7 +2,7 @@
 
 // Pascaralle and Argos gap factors
 // after Table 1 in Thompson et. al. ClustalW NAR paper.
-static double PAF[MAX_ALPHA] =
+static double PAF[20] =
 	{
 	1.13,		// A
 	1.13,		// C
@@ -29,9 +29,12 @@ static double PAF[MAX_ALPHA] =
 // (Not used: does not appear to work well).
 SCORE PAFactor(const FCOUNT fcCounts[])
 	{
+	if (ALPHA_Amino != g_Alpha)
+		Quit("PAFFactor: requires amino acid sequence");
+
 	FCOUNT fLetterCount = 0;
 	double dSum = 0;
-	for (unsigned uLetter = 0; uLetter < MAX_ALPHA; ++uLetter)
+	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
 		{
 		const FCOUNT fCount = fcCounts[uLetter];
 		dSum += fCount*PAF[uLetter];
@@ -42,7 +45,7 @@ SCORE PAFactor(const FCOUNT fcCounts[])
 	return (SCORE) (dSum/fLetterCount);
 	}
 
-static bool Hydrophilic[MAX_ALPHA] =
+static bool Hydrophilic[20] =
 	{
 	false,		// A
 	false,		// C
@@ -68,7 +71,10 @@ static bool Hydrophilic[MAX_ALPHA] =
 
 bool IsHydrophilic(const FCOUNT fcCounts[])
 	{
-	for (unsigned uLetter = 0; uLetter < MAX_ALPHA; ++uLetter)
+	if (ALPHA_Amino != g_Alpha)
+		Quit("IsHydrophilic: requires amino acid sequence");
+
+	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
 		if (fcCounts[uLetter] > 0 && !Hydrophilic[uLetter])
 			return false;
 	return true;
@@ -76,7 +82,10 @@ bool IsHydrophilic(const FCOUNT fcCounts[])
 
 bool IsHydrophilic(const unsigned uCounts[])
 	{
-	for (unsigned uLetter = 0; uLetter < MAX_ALPHA; ++uLetter)
+	if (ALPHA_Amino != g_Alpha)
+		Quit("IsHydrophilic: requires amino acid sequence");
+
+	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
 		if (uCounts[uLetter] > 0 && !Hydrophilic[uLetter])
 			return false;
 	return true;
@@ -96,7 +105,7 @@ bool IsHydrophilic(const unsigned uCounts[])
 // W		y			n
 // H		n			n
 // K		n			n
-static bool Hydrophobic[MAX_ALPHA] =
+static bool Hydrophobic[20] =
 	{
 	true,		// A
 	true,		// C
@@ -122,7 +131,10 @@ static bool Hydrophobic[MAX_ALPHA] =
 
 bool IsHydrophobic(const FCOUNT fcCounts[])
 	{
-	for (unsigned uLetter = 0; uLetter < MAX_ALPHA; ++uLetter)
+	if (ALPHA_Amino != g_Alpha)
+		Quit("IsHydrophobic: requires amino acid sequence");
+
+	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
 		if (fcCounts[uLetter] > 0.0 && !Hydrophobic[uLetter])
 			return false;
 	return true;

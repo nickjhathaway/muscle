@@ -69,10 +69,10 @@ const char *KmerToStr(unsigned Kmer)
 	unsigned c1 = (Kmer/N)%N;
 	unsigned c0 = Kmer%N;
 
-	s[0] = LetterToCharAmino(c3);
-	s[1] = LetterToCharAmino(c2);
-	s[2] = LetterToCharAmino(c1);
-	s[3] = LetterToCharAmino(c0);
+	s[0] = LetterToChar(c3);
+	s[1] = LetterToChar(c2);
+	s[2] = LetterToChar(c1);
+	s[3] = LetterToChar(c0);
 	return s;
 	}
 
@@ -160,15 +160,18 @@ unsigned CommonKmerCount(const byte Seq[], unsigned uSeqLength,
 	return uCommonCount;
 	}
 
-void SeqToLetters(const Seq &s, byte Letters[])
+static void SeqToLetters(const Seq &s, byte Letters[])
 	{
 	const unsigned uSeqLength = s.Length();
 	for (unsigned uCol = 0; uCol < uSeqLength; ++uCol)
 		{
 		char c = s.GetChar(uCol);
-		if (::IsWildcard(c))
+	// Ugly hack. My k-mer counting code isn't wild-card
+	// aware. Arbitrarily replace wildcards by a specific
+	// amino acid.
+		if (IsWildcardChar(c))
 			c = 'A';
-		*Letters++ = CharToLetterAmino(c);
+		*Letters++ = CharToLetter(c);
 		}
 	}
 

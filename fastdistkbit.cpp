@@ -14,7 +14,7 @@ static void SetKmerBitVector(const Seq &s, byte Bits[])
 	unsigned h = 0;
 	for (unsigned j = 0; j < k - 1; ++j)
 		{
-		unsigned x = CharToLetterAminoEx[(unsigned char) s[i++]];
+		unsigned x = CharToLetterEx(s[i++]);
 		if (x <= AX_Y)
 			c = c*20 + x;
 		else
@@ -25,7 +25,7 @@ static void SetKmerBitVector(const Seq &s, byte Bits[])
 		}
 	for ( ; i < uLength; ++i)
 		{
-		unsigned x = CharToLetterAminoEx[(unsigned char) s[i++]];
+		unsigned x = CharToLetterEx(s[i++]);
 		if (x <= AX_Y)
 			c = (c*20 + x)%8000;
 		else

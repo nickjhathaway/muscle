@@ -41,6 +41,7 @@ extern bool g_bAnchors;
 extern bool g_bCatchExceptions;
 extern bool g_bMSF;
 extern bool g_bAln;
+extern bool g_bClwStrict;
 extern bool g_bHTML;
 extern bool g_bQuiet;
 extern bool g_bVerbose;
@@ -53,6 +54,9 @@ extern bool g_bProfile;
 extern bool g_bTermGaps4;
 extern bool g_bBrenner;
 extern bool g_bDimer;
+extern bool g_bVersion;
+extern bool g_bStable;
+extern bool g_bFASTA;
 
 extern PPSCORE g_PPScore;
 extern OBJSCORE g_ObjScore;
@@ -69,5 +73,7 @@ extern SEQWEIGHT g_SeqWeight2;
 
 extern unsigned g_uMaxIters;
 extern unsigned long g_ulMaxSecs;
+
+extern SEQTYPE g_SeqType;
 
 #endif // params_h

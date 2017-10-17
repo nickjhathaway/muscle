@@ -10,14 +10,15 @@
 #pragma warning(disable : 4800)	// disable int-bool conversion warning
 #endif
 
-#define MUSCLE_LONG_VERSION		"MUSCLE v3.4 by Robert C. Edgar"
+#define MUSCLE_LONG_VERSION		"MUSCLE v3.5 by Robert C. Edgar"
 #define MUSCLE_MAJOR_VERSION	"3"
-#define MUSCLE_MINOR_VERSION	"4"
+#define MUSCLE_MINOR_VERSION	"5"
 
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include "types.h"
 #include "intmath.h"
 #include "alpha.h"
@@ -62,9 +63,6 @@ extern unsigned g_uTreeSplitNode2;
 
 // Maximum of four of any type
 #define Max4(a, b, c, d)	Max2(Max2(a, b), Max2(c, d))
-
-// Max length of an alphabet
-const int MAX_ALPHA = 20;
 
 const double VERY_NEGATIVE_DOUBLE = -9e29;
 const float VERY_NEGATIVE_FLOAT = (float) -9e29;
@@ -172,6 +170,7 @@ char *strsave(const char *s);
 void DistKmer20_3(const SeqVect &v, DistFunc &DF);
 void DistKbit20_3(const SeqVect &v, DistFunc &DF);
 void DistKmer6_6(const SeqVect &v, DistFunc &DF);
+void DistKmer4_6(const SeqVect &v, DistFunc &DF);
 void DistPWKimura(const SeqVect &v, DistFunc &DF);
 void FastDistKmer(const SeqVect &v, DistFunc &DF);
 void DistUnaligned(const SeqVect &v, DISTANCE DistMethod, DistFunc &DF);
@@ -248,7 +247,7 @@ void Usage();
 void SetParams();
 
 void SortCounts(const FCOUNT fcCounts[], unsigned SortOrder[]);
-unsigned AminoGroupFromFCounts(const FCOUNT fcCounts[]);
+unsigned ResidueGroupFromFCounts(const FCOUNT fcCounts[]);
 FCOUNT SumCounts(const FCOUNT Counts[]);
 
 bool FlagOpt(const char *Name);
@@ -283,6 +282,8 @@ void Local();
 void Profile();
 void UPGMA2(const DistCalc &DC, Tree &tree, LINKAGE Linkage);
 
+char *GetFastaSeq(FILE *f, unsigned *ptrSeqLength, char **ptrLabel,
+  bool DeleteGaps = true);
 SCORE SW(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, PWPath &Path);
 void TraceBackSW(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
@@ -293,3 +294,5 @@ void DiffPaths(const PWPath &p1, const PWPath &p2, unsigned Edges1[],
 void SetPPScore(PPSCORE p);
 SCORE GlobalAlignDimer(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, PWPath &Path);
+bool MissingCommand();
+void Credits();

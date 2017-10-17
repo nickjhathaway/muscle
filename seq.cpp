@@ -77,15 +77,16 @@ bool Seq::FromFASTAFile(TextFile &File)
 			{
 			if (isspace(c))
 				continue;
-			if (IsGap(c))
+			if (IsGapChar(c))
 				continue;
-			if (!IsValidAminoEx(c))
+			if (!IsResidueChar(c))
 				{
 				if (isprint(c))
 					{
-					Warning("Invalid amino acid '%c' in FASTA file %s line %d, replaced by 'X'",
-					  c, File.GetFileName(), File.GetLineNr());
-					c = 'X';
+					char w = GetWildcardChar();
+					Warning("Invalid residue '%c' in FASTA file %s line %d, replaced by '%c'",
+					  c, File.GetFileName(), File.GetLineNr(), w);
+					c = w;
 					}
 				else
 					Quit("Invalid byte hex %02x in FASTA file %s line %d",
@@ -107,7 +108,7 @@ void Seq::ExtractUngapped(MSA &msa) const
 	for (unsigned n = 0; n < uColCount; ++n)
 		{
 		char c = at(n);
-		if (!IsGap(c))
+		if (!IsGapChar(c))
 			msa.SetChar(0, uUngappedPos++, c);
 		}
 	msa.SetSeqName(0, m_ptrName);
@@ -143,7 +144,7 @@ void Seq::StripGaps()
 	for (CharVect::iterator p = begin(); p != end(); )
 		{
 		char c = *p;
-		if (IsGap(c))
+		if (IsGapChar(c))
 			erase(p);
 		else
 			++p;
@@ -155,7 +156,7 @@ void Seq::StripGapsAndWhitespace()
 	for (CharVect::iterator p = begin(); p != end(); )
 		{
 		char c = *p;
-		if (isspace(c) || IsGap(c))
+		if (isspace(c) || IsGapChar(c))
 			erase(p);
 		else
 			++p;
@@ -176,7 +177,7 @@ unsigned Seq::GetLetter(unsigned uIndex) const
 	{
 	assert(uIndex < Length());
 	char c = operator[](uIndex);
-	return CharToLetterAmino(c);
+	return CharToLetter(c);
 	}
 
 bool Seq::EqIgnoreCase(const Seq &s) const
@@ -188,9 +189,9 @@ bool Seq::EqIgnoreCase(const Seq &s) const
 		{
 		const char c1 = at(i);
 		const char c2 = s.at(i);
-		if (IsGap(c1))
+		if (IsGapChar(c1))
 			{
-			if (!IsGap(c2))
+			if (!IsGapChar(c2))
 				return false;
 			}
 		else
@@ -245,7 +246,7 @@ bool Seq::EqIgnoreCaseAndGaps(const Seq &s) const
 				{
 				cThis = at(uThisPos);
 				++uThisPos;
-				if (!IsGap(cThis))
+				if (!IsGapChar(cThis))
 					{
 					cThis = toupper(cThis);
 					break;
@@ -266,7 +267,7 @@ bool Seq::EqIgnoreCaseAndGaps(const Seq &s) const
 				{
 				cOther = s.at(uOtherPos);
 				++uOtherPos;
-				if (!IsGap(cOther))
+				if (!IsGapChar(cOther))
 					{
 					cOther = toupper(cOther);
 					break;
@@ -287,7 +288,7 @@ unsigned Seq::GetUngappedLength() const
 	for (CharVect::const_iterator p = begin(); p != end(); ++p)
 		{
 		char c = *p;
-		if (!IsGap(c))
+		if (!IsGapChar(c))
 			++uUngappedLength;
 		}
 	return uUngappedLength;
@@ -318,8 +319,22 @@ bool Seq::HasGap() const
 	for (CharVect::const_iterator p = begin(); p != end(); ++p)
 		{
 		char c = *p;
-		if (IsGap(c))
+		if (IsGapChar(c))
 			return true;
 		}
 	return false;
+	}
+
+void Seq::FixAlpha()
+	{
+	for (CharVect::iterator p = begin(); p != end(); ++p)
+		{
+		char c = *p;
+		if (!IsResidueChar(c))
+			{
+			char w = GetWildcardChar();
+			Warning("Invalid residue '%c', replaced by '%c'", c, w);
+			*p = w;
+			}
+		}
 	}

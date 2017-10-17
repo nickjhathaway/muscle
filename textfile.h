@@ -51,6 +51,8 @@ public:
 
 	void PushBack(int c) { m_cPushedBack = c; }
 
+	FILE *GetStdioFile() const { return m_ptrFile; }
+
 private:
 	void Init(FILE *ptrFile, const char *ptrFileName);
 

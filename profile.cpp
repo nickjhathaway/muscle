@@ -33,6 +33,32 @@ void Profile()
 	msa1.FromFile(file1);
 	msa2.FromFile(file2);
 
+	ALPHA Alpha = ALPHA_Undefined;
+	switch (g_SeqType)
+		{
+	case SEQTYPE_Auto:
+		Alpha = msa1.GuessAlpha();
+		break;
+
+	case SEQTYPE_Protein:
+		Alpha = ALPHA_Amino;
+		break;
+
+	case SEQTYPE_Nucleo:
+		Alpha = ALPHA_Nucleo;
+		break;
+
+	default:
+		Quit("Invalid SeqType");
+		}
+	SetAlpha(Alpha);
+
+	msa1.FixAlpha();
+	msa2.FixAlpha();
+
+	if (ALPHA_Nucleo == Alpha)
+		SetPPScore(PPSCORE_SPN);
+
 	unsigned uLength1;
 	unsigned uLength2;
 
