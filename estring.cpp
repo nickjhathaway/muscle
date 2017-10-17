@@ -172,7 +172,17 @@ void PathToEstrings(const PWPath &Path, short **ptresA, short **ptresB)
 	{
 // First pass to determine size of estrings esA and esB
 	const unsigned uEdgeCount = Path.GetEdgeCount();
-	assert(uEdgeCount > 0);
+	if (0 == uEdgeCount)
+		{
+		short *esA = new short[1];
+		short *esB = new short[1];
+		esA[0] = 0;
+		esB[0] = 0;
+		*ptresA = esA;
+		*ptresB = esB;
+		return;
+		}
+
 	unsigned iLengthA = 1;
 	unsigned iLengthB = 1;
 	const char cFirstEdgeType = Path.GetEdge(0).cType;

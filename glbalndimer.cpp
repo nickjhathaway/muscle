@@ -20,35 +20,6 @@ static const char *LocalScoreToStr(SCORE s)
 	return str;
 	}
 
-static char ConsensusChar(const ProfPos &PP)
-	{
-	unsigned uMostCommonLetter = 0;
-	FCOUNT fcMostCommon = PP.m_fcCounts[0];
-	bool bMoreThanOneLetter = false;
-	bool bAnyLetter = false;
-	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
-		{
-		const FCOUNT fc = PP.m_fcCounts[uLetter];
-		if (fc > 0)
-			{
-			if (bAnyLetter)
-				bMoreThanOneLetter = true;
-			bAnyLetter = true;
-			}
-		if (fc > fcMostCommon)
-			{
-			uMostCommonLetter = uLetter;
-			fcMostCommon = fc;
-			}
-		}
-	if (!bAnyLetter)
-		return '-';
-	char c = LetterToChar(uMostCommonLetter);
-	if (bMoreThanOneLetter)
-		return tolower(c);
-	return c;
-	}
-
 #if	TRACE
 static void ListDP(const SCORE *DPM_, const ProfPos *PA, const ProfPos *PB,
   unsigned uPrefixCountA, unsigned uPrefixCountB)

@@ -12,6 +12,21 @@
 #define VALIDATE	0
 #define TRACE_LENGTH_DELTA	0
 
+static void LogLeafNames(const Tree &tree, unsigned uNodeIndex)
+	{
+	const unsigned uNodeCount = tree.GetNodeCount();
+	unsigned *Leaves = new unsigned[uNodeCount];
+	unsigned uLeafCount;
+	GetLeaves(tree, uNodeIndex, Leaves, &uLeafCount);
+	for (unsigned i = 0; i < uLeafCount; ++i)
+		{
+		if (i > 0)
+			Log(",");
+		Log("%s", tree.GetLeafName(Leaves[i]));
+		}
+	delete[] Leaves;
+	}
+
 ProgNode *ProgressiveAlignE(const SeqVect &v, const Tree &GuideTree, MSA &a)
 	{
 	assert(GuideTree.IsRooted());
@@ -49,7 +64,7 @@ ProgNode *ProgressiveAlignE(const SeqVect &v, const Tree &GuideTree, MSA &a)
 			Node.m_uLength = Node.m_MSA.GetColCount();
 			Node.m_Weight = Weights[uId];
 		// TODO: Term gaps settable
-			Node.m_Prof = ProfileFromMSA(Node.m_MSA, g_scoreGapOpen, true);
+			Node.m_Prof = ProfileFromMSA(Node.m_MSA);
 			Node.m_EstringL = 0;
 			Node.m_EstringR = 0;
 #if	TRACE
@@ -70,6 +85,15 @@ ProgNode *ProgressiveAlignE(const SeqVect &v, const Tree &GuideTree, MSA &a)
 
 			const unsigned uLeft = GuideTree.GetLeft(uTreeNodeIndex);
 			const unsigned uRight = GuideTree.GetRight(uTreeNodeIndex);
+
+			if (g_bVerbose)
+				{
+				Log("Align: (");
+				LogLeafNames(GuideTree, uLeft);
+				Log(") (");
+				LogLeafNames(GuideTree, uRight);
+				Log(")\n");
+				}
 
 			ProgNode &Node1 = ProgNodes[uLeft];
 			ProgNode &Node2 = ProgNodes[uRight];
@@ -103,10 +127,10 @@ ProgNode *ProgressiveAlignE(const SeqVect &v, const Tree &GuideTree, MSA &a)
 #endif
 			PWPath TmpPath;
 			AlignTwoMSAs(Node1.m_MSA, Node2.m_MSA, Parent.m_MSA, TmpPath);
-			ProfPos *P1 = ProfileFromMSA(Node1.m_MSA, g_scoreGapOpen, true);
-			ProfPos *P2 = ProfileFromMSA(Node2.m_MSA, g_scoreGapOpen, true);
+			ProfPos *P1 = ProfileFromMSA(Node1.m_MSA, true);
+			ProfPos *P2 = ProfileFromMSA(Node2.m_MSA, true);
 			unsigned uLength = Parent.m_MSA.GetColCount();
-			ProfPos *TmpProf = ProfileFromMSA(Parent.m_MSA, g_scoreGapOpen, true);
+			ProfPos *TmpProf = ProfileFromMSA(Parent.m_MSA, true);
 
 #if	TRACE
 			Log("Node1 MSA=\n");
@@ -177,5 +201,6 @@ ProgNode *ProgressiveAlignE(const SeqVect &v, const Tree &GuideTree, MSA &a)
 	}
 #endif
 
+	delete[] Weights;
 	return ProgNodes;
 	}

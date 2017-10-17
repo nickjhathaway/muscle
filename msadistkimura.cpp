@@ -56,7 +56,9 @@ double KimuraDist(double dPctId)
 
 // If p >= 0.75, use table lookup
 	assert(p <= 1 && p >= 0.75);
-	int iTableIndex = (int) ((p - 0.75)*100 + 0.5);
+// Thanks for Michael Hoel for pointing out a bug
+// in the table index calculation in versions <= 3.52.
+	int iTableIndex = (int) ((p - 0.75)*1000 + 0.5);
 	if (iTableIndex < 0 || iTableIndex >= iTableEntries)
 		Quit("Internal error in MSADistKimura::ComputeDist");
 

@@ -47,6 +47,13 @@ const char *GetCmdLine()
 
 static unsigned uPeakMemUseBytes;
 
+double GetRAMSizeMB()
+	{
+	MEMORYSTATUS MS;
+	GlobalMemoryStatus(&MS);
+	return MS.dwAvailPhys/1e6;
+	}
+
 double GetMemUseMB()
 	{
 	HANDLE hProc = GetCurrentProcess();

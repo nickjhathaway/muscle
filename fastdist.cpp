@@ -36,7 +36,7 @@ void DistUnaligned(const SeqVect &v, DISTANCE DistMethod, DistFunc &DF)
 		Quit("DistUnaligned, unsupported distance method %d", DistMethod);
 		}
 
-	const char **SeqNames = (const char **) malloc(uSeqCount*sizeof(char *));
+//	const char **SeqNames = (const char **) malloc(uSeqCount*sizeof(char *));
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
 		const Seq &s = *(v[uSeqIndex]);

@@ -182,7 +182,12 @@ bool Tree::GetGroupFromFile(TextFile &File, unsigned uNodeIndex,
 
 // Group is either leaf name or (left, right).
 	if (NTT_String == NTT)
+		{
 		SetLeafName(uNodeIndex, szToken);
+#if	TRACE
+		Log("Group is leaf '%s'\n", szToken);
+#endif
+		}
 	else if (NTT_Lparen == NTT)
 		{
 		const unsigned uLeft = AppendBranch(uNodeIndex);
@@ -190,12 +195,15 @@ bool Tree::GetGroupFromFile(TextFile &File, unsigned uNodeIndex,
 
 	// Left sub-group...
 #if	TRACE
-		Log("Expect left sub-group\n");
+		Log("Got '(', group is compound, expect left sub-group\n");
 #endif
 		double dEdgeLength;
 		bool bLeftLength = GetGroupFromFile(File, uLeft, &dEdgeLength);
 #if	TRACE
-		Log("Edge length for left sub-group: %s\n", bLeftLength ? "yes" : "no");
+		if (bLeftLength)
+			Log("Edge length for left sub-group: %.3g\n", dEdgeLength);
+		else
+			Log("No edge length for left sub-group\n");
 #endif
 		if (bLeftLength)
 			SetEdgeLength(uNodeIndex, uLeft, dEdgeLength);
@@ -216,12 +224,15 @@ bool Tree::GetGroupFromFile(TextFile &File, unsigned uNodeIndex,
 		if (bRightLength)
 			SetEdgeLength(uNodeIndex, uRight, dEdgeLength);
 #if	TRACE
-		Log("Edge length for right sub-group: %s\n", bLeftLength ? "yes" : "no");
+		if (bRightLength)
+			Log("Edge length for right sub-group: %.3g\n", dEdgeLength);
+		else
+			Log("No edge length for right sub-group\n");
 #endif
 
 	// ... then closing parenthesis.
 #if	TRACE
-		Log("Expect closing parenthesis or comma\n");
+		Log("Expect closing parenthesis (or comma if > 2-ary)\n");
 #endif
 		NTT = GetToken(File, szToken, sizeof(szToken));
 		if (NTT_Rparen == NTT)
@@ -232,7 +243,7 @@ bool Tree::GetGroupFromFile(TextFile &File, unsigned uNodeIndex,
 			return false;
 			}
 		else
-			Quit("Tree::GetGroupFromFile, expected ')', got '%s'", szToken);
+			Quit("Tree::GetGroupFromFile, expected ')' or ',', got '%s'", szToken);
 		}
 	else
 		Quit("Tree::GetGroupFromFile, expected '(' or leaf name, got '%s'",

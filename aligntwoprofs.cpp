@@ -18,17 +18,14 @@ SCORE AlignTwoProfs(
 	if (r < 1)
 		r = 1/r;
 
-	SCORE Score;
-	if (g_bTermGaps4 && r > 1.2)
-		Score = GlobalAlign4((ProfPos *) PA, uLengthA, (ProfPos *) PB, uLengthB, Path);
-	else
-		Score = GlobalAlign(PA, uLengthA, PB, uLengthB, Path);
+	SCORE Score = GlobalAlign(PA, uLengthA, PB, uLengthB, Path);
 
 	AlignTwoProfsGivenPath(Path, PA, uLengthB, wA/(wA + wB), PB, uLengthB, wB/(wA + wB),
 	  ptrPout, ptruLengthOut);
 
+#if	HYDRO
 	if (ALPHA_Amino == g_Alpha)
 		Hydro(*ptrPout, *ptruLengthOut);
-
+#endif
 	return Score;
 	}

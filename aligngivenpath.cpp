@@ -111,16 +111,12 @@ static void ScoresFromFreqsPos(ProfPos *Prof, unsigned uLength, unsigned uPos)
 	else
 		fcClose = PP.m_GG + PP.m_LG;
 
-// TODO: assuming term gaps free
-	if (uPos > 0)
-		PP.m_scoreGapOpen = (SCORE) ((1.0 - fcOpen)*g_scoreGapOpen/2.0);
-	else
-		PP.m_scoreGapOpen = 0;
-
-	if (uPos + 1 < uLength)
-		PP.m_scoreGapClose = (SCORE) ((1.0 - fcClose)*g_scoreGapOpen/2.0);
-	else
-		PP.m_scoreGapClose = 0;
+	PP.m_scoreGapOpen = (SCORE) ((1.0 - fcOpen)*g_scoreGapOpen/2.0);
+	PP.m_scoreGapClose = (SCORE) ((1.0 - fcClose)*g_scoreGapOpen/2.0);
+#if	DOUBLE_AFFINE
+	PP.m_scoreGapOpen2 = (SCORE) ((1.0 - fcOpen)*g_scoreGapOpen2/2.0);
+	PP.m_scoreGapClose2 = (SCORE) ((1.0 - fcClose)*g_scoreGapOpen2/2.0);
+#endif
 
 	for (unsigned i = 0; i < g_AlphaSize; ++i)
 		{
@@ -650,7 +646,7 @@ void AlignTwoProfsGivenPath(const PWPath &Path,
   ProfPos **ptrPOut, unsigned *ptruLengthOut)
 	{
 #if	TRACE
-	Log("AlignTwoProfsGivenPath wA=%.3g wB=%.3g Path=", wA, wB);
+	Log("AlignTwoProfsGivenPath wA=%.3g wB=%.3g Path=\n", wA, wB);
 	Path.LogMe();
 #endif
 	assert(BTEq(wA + wB, 1.0));
@@ -798,4 +794,9 @@ void AlignTwoProfsGivenPath(const PWPath &Path,
 
 	*ptrPOut = POut;
 	*ptruLengthOut = uEdgeCount;
+
+#if	TRACE
+	Log("AlignTwoProfsGivenPath:\n");
+	ListProfile(POut, uEdgeCount, 0);
+#endif
 	}

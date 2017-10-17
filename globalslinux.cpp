@@ -52,16 +52,7 @@ double GetMemUseMB()
 
 	int fd = open(statm, O_RDONLY);
 	if (-1 == fd)
-		{
-		static bool Warned = false;
-		if (!Warned)
-			{
-			Warned = true;
-			Warning("*Warning* Cannot open %s errno=%d %s",
-			  statm, errno, strerror(errno));
-			}
-		return 0;
-		}
+		return -1;
 	char Buffer[64];
 	int n = read(fd, Buffer, sizeof(Buffer) - 1);
 	close(fd);
@@ -116,6 +107,57 @@ void CheckMemUse()
 	double dMB = GetMemUseMB();
 	if (dMB > dPeakMemUseMB)
 		dPeakMemUseMB = dMB;
+	}
+
+double GetRAMSizeMB()
+	{
+	const double DEFAULT_RAM = 500;
+	static double RAMMB = 0;
+	if (RAMMB != 0)
+		return RAMMB;
+
+	int fd = open("/proc/meminfo", O_RDONLY);
+	if (-1 == fd)
+		{
+		static bool Warned = false;
+		if (!Warned)
+			{
+			Warned = true;
+			Warning("*Warning* Cannot open /proc/meminfo errno=%d %s",
+			  errno, strerror(errno));
+			}
+		return DEFAULT_RAM;
+		}
+	char Buffer[1024];
+	int n = read(fd, Buffer, sizeof(Buffer) - 1);
+	close(fd);
+	fd = -1;
+
+	if (n <= 0)
+		{
+		static bool Warned = false;
+		if (!Warned)
+			{
+			Warned = true;
+			Warning("*Warning* Cannot read /proc/meminfo errno=%d %s",
+			  errno, strerror(errno));
+			}
+		return DEFAULT_RAM;
+		}
+	Buffer[n] = 0;
+	char *pMem = strstr(Buffer, "MemTotal: ");
+	if (0 == pMem)
+		{
+		static bool Warned = false;
+		if (!Warned)
+			{
+			Warned = true;
+			Warning("*Warning* 'MemTotal:' not found in /proc/meminfo");
+			}
+		return DEFAULT_RAM;
+		}
+	int Bytes = atoi(pMem+9)*1000;
+	return ((double) Bytes)/1e6;
 	}
 
 #endif	// !WIN32

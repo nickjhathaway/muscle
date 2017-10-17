@@ -2,7 +2,7 @@
 #include "profile.h"
 #include "diaglist.h"
 
-#define TRACE	1
+#define TRACE	0
 
 #define pow4(i)	(1 << (2*i))	// 4^i = 2^(2*i)
 const unsigned K = 7;
@@ -41,8 +41,8 @@ static unsigned GetTuple(const ProfPos *PP, unsigned uPos)
 void FindDiagsNuc(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
   unsigned uLengthY, DiagList &DL)
 	{
-	if (ALPHA_Nucleo != g_Alpha)
-		Quit("FindDiagsNuc: requires nucleotide alphabet");
+	if (ALPHA_DNA != g_Alpha && ALPHA_RNA != g_Alpha)
+		Quit("FindDiagsNuc: requires nucleo alphabet");
 
 	DL.Clear();
 
@@ -72,6 +72,10 @@ void FindDiagsNuc(const ProfPos *PX, unsigned uLengthX, const ProfPos *PY,
 		uLengthA = uLengthY;
 		uLengthB = uLengthX;
 		}
+
+#if	TRACE
+	Log("FindDiagsNuc(LengthA=%d LengthB=%d\n", uLengthA, uLengthB);
+#endif
 
 // Build tuple map for the longer profile, B
 	if (uLengthB < K)

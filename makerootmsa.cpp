@@ -222,6 +222,9 @@ void MakeRootMSA(const SeqVect &v, const Tree &GuideTree, ProgNode Nodes[],
 		}
 	while (NULL_NEIGHBOR != uTreeNodeIndex);
 
+	delete[] Estring1;
+	delete[] Estring2;
+
 	ProgressStepsDone();
 	assert(uSeqIndex == uSeqCount);
 	}

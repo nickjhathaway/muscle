@@ -3,16 +3,155 @@
 #include "profile.h"
 
 #define TRACE	0
-#define PAF		0
 
-bool TermGapsFree(unsigned uLength1, unsigned uLength2)
+static void LogF(FCOUNT f)
 	{
-	if (g_bTermGapsHalf)
-		return true;
-	if (!g_bTermGapsHalfLonger)
-		return false;
-	return uLength1 > uLength2;
+	if (f > -0.00001 && f < 0.00001)
+		Log("       ");
+	else
+		Log("  %5.3f", f);
 	}
+
+static const char *LocalScoreToStr(SCORE s)
+	{
+	static char str[16];
+	if (s < -1e10 || s > 1e10)
+		return "    *";
+	sprintf(str, "%5.1f", s);
+	return str;
+	}
+
+#if	DOUBLE_AFFINE
+void ListProfile(const ProfPos *Prof, unsigned uLength, const MSA *ptrMSA)
+	{
+	Log("  Pos  Occ     LL     LG     GL     GG     Open  Close  Open2  Clos2\n");
+	Log("  ---  ---     --     --     --     --     ----  -----  -----  -----\n");
+	for (unsigned n = 0; n < uLength; ++n)
+		{
+		const ProfPos &PP = Prof[n];
+		Log("%5u", n);
+		LogF(PP.m_fOcc);
+		LogF(PP.m_LL);
+		LogF(PP.m_LG);
+		LogF(PP.m_GL);
+		LogF(PP.m_GG);
+		Log("  %s", LocalScoreToStr(-PP.m_scoreGapOpen));
+		Log("  %s", LocalScoreToStr(-PP.m_scoreGapClose));
+		Log("  %s", LocalScoreToStr(-PP.m_scoreGapOpen2));
+		Log("  %s", LocalScoreToStr(-PP.m_scoreGapClose2));
+		if (0 != ptrMSA)
+			{
+			const unsigned uSeqCount = ptrMSA->GetSeqCount();
+			Log("  ");
+			for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
+				Log("%c", ptrMSA->GetChar(uSeqIndex, n));
+			}
+		Log("\n");
+		}
+
+	Log("\n");
+	Log("  Pos G");
+	for (unsigned n = 0; n < g_AlphaSize; ++n)
+		Log("     %c", LetterExToChar(n));
+	Log("\n");
+	Log("  --- -");
+	for (unsigned n = 0; n < g_AlphaSize; ++n)
+		Log(" -----");
+	Log("\n");
+
+	for (unsigned n = 0; n < uLength; ++n)
+		{
+		const ProfPos &PP = Prof[n];
+		Log("%5u", n);
+		if (-1 == PP.m_uResidueGroup)
+			Log(" -", PP.m_uResidueGroup);
+		else
+			Log(" %d", PP.m_uResidueGroup);
+
+		for (unsigned uLetter = 0; uLetter < g_AlphaSize; ++uLetter)
+			{
+			FCOUNT f = PP.m_fcCounts[uLetter];
+			if (f == 0.0)
+				Log("      ");
+			else
+				Log(" %5.3f", f);
+			}
+		if (0 != ptrMSA)
+			{
+			const unsigned uSeqCount = ptrMSA->GetSeqCount();
+			Log("  ");
+			for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
+				Log("%c", ptrMSA->GetChar(uSeqIndex, n));
+			}
+		Log("\n");
+		}
+	}
+#endif	// DOUBLE_AFFINE
+
+#if SINGLE_AFFINE
+void ListProfile(const ProfPos *Prof, unsigned uLength, const MSA *ptrMSA)
+	{
+	Log("  Pos  Occ     LL     LG     GL     GG     Open  Close\n");
+	Log("  ---  ---     --     --     --     --     ----  -----\n");
+	for (unsigned n = 0; n < uLength; ++n)
+		{
+		const ProfPos &PP = Prof[n];
+		Log("%5u", n);
+		LogF(PP.m_fOcc);
+		LogF(PP.m_LL);
+		LogF(PP.m_LG);
+		LogF(PP.m_GL);
+		LogF(PP.m_GG);
+		Log("  %5.1f", -PP.m_scoreGapOpen);
+		Log("  %5.1f", -PP.m_scoreGapClose);
+		if (0 != ptrMSA)
+			{
+			const unsigned uSeqCount = ptrMSA->GetSeqCount();
+			Log("  ");
+			for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
+				Log("%c", ptrMSA->GetChar(uSeqIndex, n));
+			}
+		Log("\n");
+		}
+
+	Log("\n");
+	Log("  Pos G");
+	for (unsigned n = 0; n < g_AlphaSize; ++n)
+		Log("     %c", LetterExToChar(n));
+	Log("\n");
+	Log("  --- -");
+	for (unsigned n = 0; n < g_AlphaSize; ++n)
+		Log(" -----");
+	Log("\n");
+
+	for (unsigned n = 0; n < uLength; ++n)
+		{
+		const ProfPos &PP = Prof[n];
+		Log("%5u", n);
+		if (-1 == PP.m_uResidueGroup)
+			Log(" -", PP.m_uResidueGroup);
+		else
+			Log(" %d", PP.m_uResidueGroup);
+
+		for (unsigned uLetter = 0; uLetter < g_AlphaSize; ++uLetter)
+			{
+			FCOUNT f = PP.m_fcCounts[uLetter];
+			if (f == 0.0)
+				Log("      ");
+			else
+				Log(" %5.3f", f);
+			}
+		if (0 != ptrMSA)
+			{
+			const unsigned uSeqCount = ptrMSA->GetSeqCount();
+			Log("  ");
+			for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
+				Log("%c", ptrMSA->GetChar(uSeqIndex, n));
+			}
+		Log("\n");
+		}
+	}
+#endif
 
 void SortCounts(const FCOUNT fcCounts[], unsigned SortOrder[])
 	{
@@ -93,14 +232,15 @@ unsigned ResidueGroupFromFCounts(const FCOUNT fcCounts[])
 	case ALPHA_Amino:
 		return AminoGroupFromFCounts(fcCounts);
 
-	case ALPHA_Nucleo:
+	case ALPHA_DNA:
+	case ALPHA_RNA:
 		return NucleoGroupFromFCounts(fcCounts);
 		}
 	Quit("ResidueGroupFromFCounts: bad alpha");
 	return 0;
 	}
 
-ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
+ProfPos *ProfileFromMSA(const MSA &a)
 	{
 	const unsigned uSeqCount = a.GetSeqCount();
 	const unsigned uColCount = a.GetColCount();
@@ -133,7 +273,7 @@ ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
 		for (unsigned i = 0; i < g_AlphaSize; ++i)
 			{
 			SCORE scoreSum = 0;
-			for (unsigned j = 0; j < 20; ++j)
+			for (unsigned j = 0; j < g_AlphaSize; ++j)
 				scoreSum += PP.m_fcCounts[j]*(*g_ptrScoreMatrix)[i][j];
 			PP.m_AAScores[i] = scoreSum;
 			}
@@ -144,8 +284,12 @@ ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
 		PP.m_fcStartOcc = sStartOcc;
 		PP.m_fcEndOcc = sEndOcc;
 
-		PP.m_scoreGapOpen = sStartOcc*scoreGapOpen/2;
-		PP.m_scoreGapClose = sEndOcc*scoreGapOpen/2;
+		PP.m_scoreGapOpen = sStartOcc*g_scoreGapOpen/2;
+		PP.m_scoreGapClose = sEndOcc*g_scoreGapOpen/2;
+#if	DOUBLE_AFFINE
+		PP.m_scoreGapOpen2 = sStartOcc*g_scoreGapOpen2/2;
+		PP.m_scoreGapClose2 = sEndOcc*g_scoreGapOpen2/2;
+#endif
 //		PP.m_scoreGapExtend = (SCORE) ((1.0 - fcGapExtend)*scoreGapExtend);
 
 #if	PAF
@@ -157,18 +301,12 @@ ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
 			PP.m_scoreGapClose *= paf;
 			}
 #endif
-
-		if (bTermGapsFree)
-			{
-			if (0 == uColIndex)
-				PP.m_scoreGapOpen = 0;
-			if (uColCount - 1 == uColIndex)
-				PP.m_scoreGapClose = 0;
-			}
 		}
 
+#if	HYDRO
 	if (ALPHA_Amino == g_Alpha)
 		Hydro(Pos, uColCount);
+#endif
 
 #if	TRACE
 	{
@@ -177,75 +315,4 @@ ProfPos *ProfileFromMSA(const MSA &a, SCORE scoreGapOpen, bool bTermGapsFree)
 	}
 #endif
 	return Pos;
-	}
-
-static void LogF(FCOUNT f)
-	{
-	if (f > -0.00001 && f < 0.00001)
-		Log("       ");
-	else
-		Log("  %5.3f", f);
-	}
-
-void ListProfile(const ProfPos *Prof, unsigned uLength, const MSA *ptrMSA)
-	{
-	Log("  Pos  Occ     LL     LG     GL     GG     Open  Close\n");
-	Log("  ---  ---     --     --     --     --     ----  -----\n");
-	for (unsigned n = 0; n < uLength; ++n)
-		{
-		const ProfPos &PP = Prof[n];
-		Log("%5u", n);
-		LogF(PP.m_fOcc);
-		LogF(PP.m_LL);
-		LogF(PP.m_LG);
-		LogF(PP.m_GL);
-		LogF(PP.m_GG);
-		Log("  %5.1f", -PP.m_scoreGapOpen);
-		Log("  %5.1f", -PP.m_scoreGapClose);
-		if (0 != ptrMSA)
-			{
-			const unsigned uSeqCount = ptrMSA->GetSeqCount();
-			Log("  ");
-			for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
-				Log("%c", ptrMSA->GetChar(uSeqIndex, n));
-			}
-		Log("\n");
-		}
-
-	Log("\n");
-	Log("  Pos G");
-	for (unsigned n = 0; n < g_AlphaSize; ++n)
-		Log("     %c", LetterExToChar(n));
-	Log("\n");
-	Log("  --- -");
-	for (unsigned n = 0; n < g_AlphaSize; ++n)
-		Log(" -----");
-	Log("\n");
-
-	for (unsigned n = 0; n < uLength; ++n)
-		{
-		const ProfPos &PP = Prof[n];
-		Log("%5u", n);
-		if (-1 == PP.m_uResidueGroup)
-			Log(" -", PP.m_uResidueGroup);
-		else
-			Log(" %d", PP.m_uResidueGroup);
-
-		for (unsigned uLetter = 0; uLetter < g_AlphaSize; ++uLetter)
-			{
-			FCOUNT f = PP.m_fcCounts[uLetter];
-			if (f == 0.0)
-				Log("      ");
-			else
-				Log(" %5.3f", f);
-			}
-		if (0 != ptrMSA)
-			{
-			const unsigned uSeqCount = ptrMSA->GetSeqCount();
-			Log("  ");
-			for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
-				Log("%c", ptrMSA->GetChar(uSeqIndex, n));
-			}
-		Log("\n");
-		}
 	}

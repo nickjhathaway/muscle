@@ -2,7 +2,7 @@
 
 // Pascaralle and Argos gap factors
 // after Table 1 in Thompson et. al. ClustalW NAR paper.
-static double PAF[20] =
+static double PAFFacs[20] =
 	{
 	1.13,		// A
 	1.13,		// C
@@ -37,7 +37,7 @@ SCORE PAFactor(const FCOUNT fcCounts[])
 	for (unsigned uLetter = 0; uLetter < 20; ++uLetter)
 		{
 		const FCOUNT fCount = fcCounts[uLetter];
-		dSum += fCount*PAF[uLetter];
+		dSum += fCount*PAFFacs[uLetter];
 		fLetterCount += fCount;
 		}
 	if (0 == fLetterCount)

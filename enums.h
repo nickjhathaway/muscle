@@ -10,12 +10,14 @@
 
 s(ALPHA)
 c(ALPHA, Amino)
-c(ALPHA, Nucleo)
+c(ALPHA, DNA)
+c(ALPHA, RNA)
 e(ALPHA)
 
 s(SEQTYPE)
 c(SEQTYPE, Protein)
-c(SEQTYPE, Nucleo)
+c(SEQTYPE, DNA)
+c(SEQTYPE, RNA)
 c(SEQTYPE, Auto)
 e(SEQTYPE)
 
@@ -81,6 +83,12 @@ c(OBJSCORE, PS)				// sum of Prof-Seq score for all seqs in MSA
 c(OBJSCORE, SPF)			// sum of pairs, fast approximation
 c(OBJSCORE, SPM)			// sp if <= 100 seqs, spf otherwise
 e(OBJSCORE)
+
+s(TERMGAPS)
+c(TERMGAPS, Full)
+c(TERMGAPS, Half)
+c(TERMGAPS, Ext)
+e(TERMGAPS)
 
 #undef s
 #undef c

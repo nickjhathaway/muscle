@@ -114,6 +114,9 @@ static void AllocDPMem(unsigned uLengthA, unsigned uLengthB)
 SCORE GlobalAlignLE(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, PWPath &Path)
 	{
+	SetTermGaps(PA, uLengthA);
+	SetTermGaps(PB, uLengthB);
+
 	const unsigned uPrefixCountA = uLengthA + 1;
 	const unsigned uPrefixCountB = uLengthB + 1;
 

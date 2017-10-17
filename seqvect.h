@@ -44,9 +44,11 @@ public:
 	void LogMe() const;
 	const char *GetSeqName(unsigned uSeqIndex) const;
 	unsigned GetSeqId(unsigned uSeqIndex) const;
+	unsigned GetSeqIdFromName(const char *Name) const;
 	unsigned GetSeqLength(unsigned uSeqIndex) const;
 	void SetSeqId(unsigned uSeqIndex, unsigned uId);
 	Seq &GetSeq(unsigned uIndex);
+	Seq &GetSeqById(unsigned uId);
 	const Seq &GetSeq(unsigned uIndex) const;
 
 	ALPHA GuessAlpha() const;

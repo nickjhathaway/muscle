@@ -109,6 +109,9 @@ char *GetFastaSeq(FILE *f, unsigned *ptrSeqLength, char **ptrLabel, bool DeleteG
 		PreviousChar = c;
 		}
 
+	if (0 == Pos)
+		return GetFastaSeq(f, ptrSeqLength, ptrLabel, DeleteGaps);
+
 	*ptrSeqLength = Pos;
 	return Buffer;
 	}

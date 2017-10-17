@@ -23,6 +23,8 @@ void MHackStart(SeqVect &v)
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
 		Seq &s = v.GetSeq(uSeqIndex);
+		if (0 == s.Length())
+			continue;
 		unsigned uId = s.GetId();
 		if (s[0] == 'M' || s[0] == 'm')
 			{
@@ -35,6 +37,8 @@ void MHackStart(SeqVect &v)
 void MHackEnd(MSA &msa)
 	{
 	if (ALPHA_Amino != g_Alpha)
+		return;
+	if (0 == M)
 		return;
 
 	const unsigned uSeqCount = msa.GetSeqCount();

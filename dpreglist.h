@@ -20,7 +20,7 @@ struct DPRegion
 		};
 	};
 
-const unsigned MAX_DPREGIONS = 100;
+const unsigned MAX_DPREGIONS = 1024;
 
 class DPRegionList
 	{

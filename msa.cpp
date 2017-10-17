@@ -140,7 +140,8 @@ char MSA::GetChar(unsigned uSeqIndex, unsigned uIndex) const
 	{
 // TODO: Performance cost?
 	if (uSeqIndex >= m_uSeqCount || uIndex >= m_uColCount)
-		Quit("MSA::GetLetter(%u,%u)", uSeqIndex, uIndex);
+		Quit("MSA::GetChar(%u/%u,%u/%u)",
+		  uSeqIndex, m_uSeqCount, uIndex, m_uColCount);
 
 	char c = m_szSeqs[uSeqIndex][uIndex];
 //	assert(IsLegalChar(c));
@@ -153,7 +154,13 @@ unsigned MSA::GetLetter(unsigned uSeqIndex, unsigned uIndex) const
 	char c = GetChar(uSeqIndex, uIndex);
 	unsigned uLetter = CharToLetter(c);
 	if (uLetter >= 20)
-		Quit("MSA::GetLetter=%u", uLetter);
+		{
+		char c = ' ';
+		if (uSeqIndex < m_uSeqCount && uIndex < m_uColCount)
+			c = m_szSeqs[uSeqIndex][uIndex];
+		Quit("MSA::GetLetter(%u/%u, %u/%u)='%c'/%u",
+		  uSeqIndex, m_uSeqCount, uIndex, m_uColCount, c, uLetter);
+		}
 	return uLetter;
 	}
 
@@ -619,8 +626,14 @@ void MSA::ToFile(TextFile &File) const
 		ToAlnFile(File);
 	else if (g_bHTML)
 		ToHTMLFile(File);
+	else if (g_bPHYS)
+		ToPhySequentialFile(File);
+	else if (g_bPHYI)
+		ToPhyInterleavedFile(File);
 	else
 		ToFASTAFile(File);
+	if (0 != g_pstrScoreFileName)
+		WriteScoreFile(*this);
 	}
 
 bool MSA::ColumnHasGap(unsigned uColIndex) const
@@ -634,9 +647,15 @@ bool MSA::ColumnHasGap(unsigned uColIndex) const
 
 void MSA::SetIdCount(unsigned uIdCount)
 	{
-	if (m_uIdCount != 0)
-		Quit("MSA::SetIdCount: may only be called once");
+	//if (m_uIdCount != 0)
+	//	Quit("MSA::SetIdCount: may only be called once");
 
+	if (m_uIdCount > 0)
+		{
+		if (uIdCount > m_uIdCount)
+			Quit("MSA::SetIdCount: cannot increase count");
+		return;
+		}
 	m_uIdCount = uIdCount;
 	}
 
@@ -665,6 +684,19 @@ unsigned MSA::GetSeqIndex(unsigned uId) const
 	unsigned uSeqIndex = m_IdToSeqIndex[uId];
 	assert(uSeqIndex < m_uSeqCount);
 	return uSeqIndex;
+	}
+
+bool MSA::GetSeqIndex(unsigned uId, unsigned *ptruIndex) const
+	{
+	for (unsigned uSeqIndex = 0; uSeqIndex < m_uSeqCount; ++uSeqIndex)
+		{
+		if (uId == m_SeqIndexToId[uSeqIndex])
+			{
+			*ptruIndex = uSeqIndex;
+			return true;
+			}
+		}
+	return false;
 	}
 
 unsigned MSA::GetSeqId(unsigned uSeqIndex) const
@@ -709,7 +741,7 @@ void MSA::AppendSeq(char *ptrSeq, unsigned uSeqLength, char *ptrLabel)
 	if (m_uSeqCount > m_uCacheSeqCount)
 		Quit("Internal error MSA::AppendSeq");
 	if (m_uSeqCount == m_uCacheSeqCount)
-		ExpandCache(m_uSeqCount + 512, uSeqLength);
+		ExpandCache(m_uSeqCount + 4, uSeqLength);
 	m_szSeqs[m_uSeqCount] = ptrSeq;
 	m_szNames[m_uSeqCount] = ptrLabel;
 	++m_uSeqCount;
@@ -758,6 +790,7 @@ void MSA::ExpandCache(unsigned uSeqCount, unsigned uColCount)
 
 void MSA::FixAlpha()
 	{
+	ClearInvalidLetterWarning();
 	for (unsigned uSeqIndex = 0; uSeqIndex < m_uSeqCount; ++uSeqIndex)
 		{
 		for (unsigned uColIndex = 0; uColIndex < m_uColCount; ++uColIndex)
@@ -766,11 +799,13 @@ void MSA::FixAlpha()
 			if (!IsResidueChar(c) && !IsGapChar(c))
 				{
 				char w = GetWildcardChar();
-				Warning("Invalid residue '%c', replaced by '%c'", c, w);
+				// Warning("Invalid letter '%c', replaced by '%c'", c, w);
+				InvalidLetterWarning(c, w);
 				SetChar(uSeqIndex, uColIndex, w);
 				}
 			}
 		}
+	ReportInvalidLetters();
 	}
 
 ALPHA MSA::GuessAlpha() const
@@ -786,7 +821,8 @@ ALPHA MSA::GuessAlpha() const
 	if (0 == uSeqCount)
 		return ALPHA_Amino;
 
-	unsigned uNucleoCount = 0;
+	unsigned uDNACount = 0;
+	unsigned uRNACount = 0;
 	unsigned uTotal = 0;
 	unsigned i = 0;
 	for (;;)
@@ -799,13 +835,17 @@ ALPHA MSA::GuessAlpha() const
 		char c = GetChar(uSeqIndex, uColIndex);
 		if (IsGapChar(c))
 			continue;
-		if (IsNucleo(c))
-			++uNucleoCount;
+		if (IsDNA(c))
+			++uDNACount;
+		if (IsRNA(c))
+			++uRNACount;
 		++uTotal;
 		if (uTotal >= CHAR_COUNT)
 			break;
 		}
-	if (uTotal != 0 && ((uNucleoCount*100)/uTotal) >= MIN_NUCLEO_PCT)
-		return ALPHA_Nucleo;
+	if (uTotal != 0 && ((uRNACount*100)/uTotal) >= MIN_NUCLEO_PCT)
+		return ALPHA_RNA;
+	if (uTotal != 0 && ((uDNACount*100)/uTotal) >= MIN_NUCLEO_PCT)
+		return ALPHA_DNA;
 	return ALPHA_Amino;
 	}

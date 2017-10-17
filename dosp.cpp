@@ -9,12 +9,6 @@ void DoSP()
 	{
 	TextFile f(g_pstrSPFileName);
 
-	if (PPSCORE_LE == g_PPScore)
-		{
-		g_PPScore = PPSCORE_SV;
-		SetScoreMatrix();
-		}
-
 	MSA a;
 	a.FromFile(f);
 
@@ -29,8 +23,12 @@ void DoSP()
 		Alpha = ALPHA_Amino;
 		break;
 
-	case SEQTYPE_Nucleo:
-		Alpha = ALPHA_Nucleo;
+	case SEQTYPE_DNA:
+		Alpha = ALPHA_DNA;
+		break;
+
+	case SEQTYPE_RNA:
+		Alpha = ALPHA_RNA;
 		break;
 
 	default:
@@ -39,8 +37,7 @@ void DoSP()
 	SetAlpha(Alpha);
 	a.FixAlpha();
 
-	if (ALPHA_Nucleo == Alpha)
-		SetPPScore(PPSCORE_SPN);
+	SetPPScore();
 
 	const unsigned uSeqCount = a.GetSeqCount();
 	if (0 == uSeqCount)

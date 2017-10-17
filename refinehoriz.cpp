@@ -9,7 +9,8 @@
 unsigned g_uRefineHeightSubtree;
 unsigned g_uRefineHeightSubtreeTotal;
 
-#define TRACE 0
+#define TRACE			0
+#define DIFFOBJSCORE	0
 
 static bool TryRealign(MSA &msaIn, const Tree &tree, const unsigned Leaves1[],
   unsigned uCount1, const unsigned Leaves2[], unsigned uCount2,
@@ -83,9 +84,19 @@ static bool TryRealign(MSA &msaIn, const Tree &tree, const unsigned Leaves1[],
 		return false;
 		}
 
-	//const SCORE scoreDiff = DiffObjScore(msaIn, pathBefore, Edges1, uDiffCount1,
-	//  msaRealigned, pathAfter, Edges2, uDiffCount2);
+	SetMSAWeightsMuscle(msaIn);
+	SetMSAWeightsMuscle(msaRealigned);
 
+#if	DIFFOBJSCORE
+	const SCORE scoreDiff = DiffObjScore(msaIn, pathBefore, Edges1, uDiffCount1,
+	  msaRealigned, pathAfter, Edges2, uDiffCount2);
+	bool bAccept = (scoreDiff > 0);
+	*ptrscoreBefore = 0;
+	*ptrscoreAfter = scoreDiff;
+	//const SCORE scoreBefore = ObjScoreIds(msaIn, Ids1, uCount1, Ids2, uCount2);
+	//const SCORE scoreAfter = ObjScoreIds(msaRealigned, Ids1, uCount1, Ids2, uCount2);
+	//Log("Diff = %.3g %.3g\n", scoreDiff, scoreAfter - scoreBefore);
+#else
 	const SCORE scoreBefore = ObjScoreIds(msaIn, Ids1, uCount1, Ids2, uCount2);
 	const SCORE scoreAfter = ObjScoreIds(msaRealigned, Ids1, uCount1, Ids2, uCount2);
 
@@ -95,20 +106,21 @@ static bool TryRealign(MSA &msaIn, const Tree &tree, const unsigned Leaves1[],
 	Log("Score %g -> %g Accept %s\n", scoreBefore, scoreAfter, bAccept ? "TRUE" : "FALSE");
 #endif
 
-	if (bAccept)
-		msaIn.Copy(msaRealigned);
-
-	delete[] Ids1;
-	delete[] Ids2;
-
 	*ptrscoreBefore = scoreBefore;
 	*ptrscoreAfter = scoreAfter;
+#endif
+
+	if (bAccept)
+		msaIn.Copy(msaRealigned);
+	delete[] Ids1;
+	delete[] Ids2;
 	return bAccept;
 	}
 
 static void RefineHeightParts(MSA &msaIn, const Tree &tree,
  const unsigned InternalNodeIndexes[], bool bReversed, bool bRight,
- unsigned uIter, ScoreHistory &History,
+ unsigned uIter, 
+ ScoreHistory &History,
  bool *ptrbAnyChanges, bool *ptrbOscillating, bool bLockLeft, bool bLockRight)
 	{
 	*ptrbOscillating = false;
@@ -245,7 +257,9 @@ bool RefineHoriz(MSA &msaIn, const Tree &tree, unsigned uIters, bool bLockLeft,
 				Quit("RefineHeight default case");
 				}
 			RefineHeightParts(msaIn, tree, Internals, bReverse, bRight,
-			  uIter, History, &bAnyChanges, &bOscillating, bLockLeft, bLockRight);
+			  uIter, 
+			  History, 
+			  &bAnyChanges, &bOscillating, bLockLeft, bLockRight);
 			if (bOscillating)
 				{
 				ProgressStepsDone();

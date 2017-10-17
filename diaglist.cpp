@@ -8,7 +8,7 @@
 void DiagList::Add(const Diag &d)
 	{
 	if (m_uCount == MAX_DIAGS)
-		Quit("DiagList::Add, overflow");
+		Quit("DiagList::Add, overflow %u", m_uCount);
 	m_Diags[m_uCount] = d;
 	++m_uCount;
 	}
@@ -230,6 +230,39 @@ void DiagList::DeleteIncompatible()
 		for (unsigned j = i + 1; j < m_uCount; ++j)
 			{
 			const Diag &dj = m_Diags[j];
+
+		// Verify sorted correctly
+			assert(di.m_uStartPosA <= dj.m_uStartPosA);
+
+		// If two diagonals are incompatible and
+		// one is is much longer than the other,
+		// keep the longer one.
+			if (!DiagCompatible(di, dj))
+				{
+				if (di.m_uLength > dj.m_uLength*4)
+					bFlagForDeletion[j] = true;
+				else if (dj.m_uLength > di.m_uLength*4)
+					bFlagForDeletion[i] = true;
+				else
+					{
+					bFlagForDeletion[i] = true;
+					bFlagForDeletion[j] = true;
+					}
+				}
+			}
+		}
+
+	for (unsigned i = 0; i < m_uCount; ++i)
+		{
+		const Diag &di = m_Diags[i];
+		if (bFlagForDeletion[i])
+			continue;
+
+		for (unsigned j = i + 1; j < m_uCount; ++j)
+			{
+			const Diag &dj = m_Diags[j];
+			if (bFlagForDeletion[j])
+				continue;
 
 		// Verify sorted correctly
 			assert(di.m_uStartPosA <= dj.m_uStartPosA);

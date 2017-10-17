@@ -16,7 +16,7 @@ unsigned DPRegionList::GetDPArea() const
 void DPRegionList::Add(const DPRegion &r)
 	{
 	if (m_uCount == MAX_DPREGIONS)
-		Quit("DPRegionList::Add, overflow");
+		Quit("DPRegionList::Add, overflow %d", m_uCount);
 	m_DPRegions[m_uCount] = r;
 	++m_uCount;
 	}
@@ -50,7 +50,9 @@ void DPRegionList::LogMe() const
 void DiagListToDPRegionList(const DiagList &DL, DPRegionList &RL,
   unsigned uLengthA, unsigned uLengthB)
 	{
-	assert(g_uDiagMargin <= g_uMinDiagLength/2);
+	if (g_uDiagMargin > g_uMinDiagLength/2)
+		Quit("Invalid parameters, diagmargin=%d must be <= 2*diaglength=%d",
+		  g_uDiagMargin, g_uMinDiagLength);
 
 	unsigned uStartPosA = 0;
 	unsigned uStartPosB = 0;

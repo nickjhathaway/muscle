@@ -21,7 +21,7 @@ static ProfPos *ProfileFromMSALocal(MSA &msa, Tree &tree)
 
 	TreeFromMSA(msa, tree, g_Cluster1, g_Distance1, g_Root1);
 	SetMuscleTree(tree);
-	return ProfileFromMSA(msa, g_scoreGapOpen, true);
+	return ProfileFromMSA(msa);
 	}
 
 void Local()
@@ -48,8 +48,12 @@ void Local()
 		Alpha = ALPHA_Amino;
 		break;
 
-	case SEQTYPE_Nucleo:
-		Alpha = ALPHA_Nucleo;
+	case SEQTYPE_DNA:
+		Alpha = ALPHA_DNA;
+		break;
+
+	case SEQTYPE_RNA:
+		Alpha = ALPHA_RNA;
 		break;
 
 	default:
@@ -60,7 +64,7 @@ void Local()
 	msa1.FixAlpha();
 	msa2.FixAlpha();
 
-	if (ALPHA_Nucleo == Alpha)
+	if (ALPHA_DNA == Alpha || ALPHA_RNA == Alpha)
 		SetPPScore(PPSCORE_SPN);
 
 	const unsigned uSeqCount1 = msa1.GetSeqCount();

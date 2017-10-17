@@ -5,15 +5,20 @@
 #include "msa.h"
 #include "tree.h"
 #include "profile.h"
+#include "timing.h"
 
-extern void MHackStart(SeqVect &v);
-extern void MHackEnd(MSA &msa);
+static char g_strUseTreeWarning[] =
+"\n******** WARNING ****************\n"
+"\nYou specified the -usetree option.\n"
+"Note that a good evolutionary tree may NOT be a good\n"
+"guide tree for multiple alignment. For more details,\n"
+"please refer to the user guide. To disable this\n"
+"warning, use -usetree_nowarn <treefilename>.\n\n";
 
-static void Muscle()
+void DoMuscle()
 	{
-	SetOutputFileName(g_pstrInFileName);
+	SetOutputFileName(g_pstrOutFileName);
 	SetInputFileName(g_pstrInFileName);
-	SetStartTime();
 
 	SetMaxIters(g_uMaxIters);
 	SetSeqWeightMethod(g_SeqWeight1);
@@ -37,24 +42,42 @@ static void Muscle()
 		Alpha = ALPHA_Amino;
 		break;
 
-	case SEQTYPE_Nucleo:
-		Alpha = ALPHA_Nucleo;
+	case SEQTYPE_DNA:
+		Alpha = ALPHA_DNA;
+		break;
+
+	case SEQTYPE_RNA:
+		Alpha = ALPHA_RNA;
 		break;
 
 	default:
-		Quit("Invalid SeqType");
+		Quit("Invalid seq type");
 		}
 	SetAlpha(Alpha);
 	v.FixAlpha();
 
-	if (ALPHA_Nucleo == Alpha)
+	PTR_SCOREMATRIX UserMatrix = 0;
+	if (0 != g_pstrMatrixFileName)
 		{
-		SetPPScore(PPSCORE_SPN);
-		g_Distance1 = DISTANCE_Kmer4_6;
+		const char *FileName = g_pstrMatrixFileName;
+		const char *Path = getenv("MUSCLE_MXPATH");
+		if (Path != 0)
+			{
+			size_t n = strlen(Path) + 1 + strlen(FileName) + 1;
+			char *NewFileName = new char[n];
+			sprintf(NewFileName, "%s/%s", Path, FileName);
+			FileName = NewFileName;
+			}
+		TextFile File(FileName);
+		UserMatrix = ReadMx(File);
+		g_Alpha = ALPHA_Amino;
+		g_PPScore = PPSCORE_SP;
 		}
 
-	if (g_bVerbose)
-		ListParams();
+	SetPPScore();
+
+	if (0 != UserMatrix)
+		g_ptrScoreMatrix = UserMatrix;
 
 	unsigned uMaxL = 0;
 	unsigned uTotL = 0;
@@ -79,9 +102,6 @@ static void Muscle()
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		v.SetSeqId(uSeqIndex, uSeqIndex);
 
-	if (uSeqCount > 1)
-		MHackStart(v);
-
 	if (0 == uSeqCount)
 		Quit("Input file '%s' has no sequences", g_pstrInFileName);
 	if (1 == uSeqCount)
@@ -90,22 +110,51 @@ static void Muscle()
 		v.ToFile(fileOut);
 		return;
 		}
-/////
-//	{
-//#include "pwpath.h"
-//	const Seq &seq1 = v.GetSeq(0);
-//	const Seq &seq2 = v.GetSeq(1);
-//	PWPath Path;
-//	SCORE s = GlobalAlignSS(seq1, seq2, Path);
-//	Log("SS = %.3g\n", s);
-//	Log("Path=\n");
-//	Path.LogMe();
-//	}
-/////
+
+	if (uSeqCount > 1)
+		MHackStart(v);
 
 // First iteration
 	Tree GuideTree;
-	TreeFromSeqVect(v, GuideTree, g_Cluster1, g_Distance1, g_Root1);
+	if (0 != g_pstrUseTreeFileName)
+		{
+	// Discourage users...
+		if (!g_bUseTreeNoWarn)
+			fprintf(stderr, g_strUseTreeWarning);
+
+	// Read tree from file
+		TextFile TreeFile(g_pstrUseTreeFileName);
+		GuideTree.FromFile(TreeFile);
+
+	// Make sure tree is rooted
+		if (!GuideTree.IsRooted())
+			Quit("User tree must be rooted");
+
+		if (GuideTree.GetLeafCount() != uSeqCount)
+			Quit("User tree does not match input sequences");
+
+		const unsigned uNodeCount = GuideTree.GetNodeCount();
+		for (unsigned uNodeIndex = 0; uNodeIndex < uNodeCount; ++uNodeIndex)
+			{
+			if (!GuideTree.IsLeaf(uNodeIndex))
+				continue;
+			const char *LeafName = GuideTree.GetLeafName(uNodeIndex);
+			unsigned uSeqIndex;
+			bool SeqFound = v.FindName(LeafName, &uSeqIndex);
+			if (!SeqFound)
+				Quit("Label %s in tree does not match sequences", LeafName);
+			}
+
+	// Set ids
+		for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
+			{
+			const char *SeqName = v.GetSeqName(uSeqIndex);
+			unsigned uLeafIndex = GuideTree.GetLeafNodeIndex(SeqName);
+			GuideTree.SetLeafId(uLeafIndex, uSeqIndex);
+			}
+		}
+	else
+		TreeFromSeqVect(v, GuideTree, g_Cluster1, g_Distance1, g_Root1);
 
 	const char *Tree1 = ValueOpt("Tree1");
 	if (0 != Tree1)
@@ -127,32 +176,44 @@ static void Muscle()
 		ProgressiveAlign(v, GuideTree, msa);
 	SetCurrentAlignment(msa);
 
+	if (0 != g_pstrComputeWeightsFileName)
+		{
+		extern void OutWeights(const char *FileName, const MSA &msa);
+		SetMSAWeightsMuscle(msa);
+		OutWeights(g_pstrComputeWeightsFileName, msa);
+		return;
+		}
+
 	ValidateMuscleIds(msa);
 
 	if (1 == g_uMaxIters || 2 == uSeqCount)
 		{
-		TextFile fileOut(g_pstrOutFileName, true);
-		MHackEnd(msa);
-		msa.ToFile(fileOut);
+		//TextFile fileOut(g_pstrOutFileName, true);
+		//MHackEnd(msa);
+		//msa.ToFile(fileOut);
+		MuscleOutput(msa);
 		return;
 		}
 
-	g_bDiags = g_bDiags2;
-	SetIter(2);
-
-	if (g_bLow)
+	if (0 == g_pstrUseTreeFileName)
 		{
-		if (0 != g_uMaxTreeRefineIters)
-			RefineTreeE(msa, v, GuideTree, ProgNodes);
-		}
-	else
-		RefineTree(msa, GuideTree);
+		g_bDiags = g_bDiags2;
+		SetIter(2);
 
-	const char *Tree2 = ValueOpt("Tree2");
-	if (0 != Tree2)
-		{
-		TextFile f(Tree2, true);
-		GuideTree.ToFile(f);
+		if (g_bLow)
+			{
+			if (0 != g_uMaxTreeRefineIters)
+				RefineTreeE(msa, v, GuideTree, ProgNodes);
+			}
+		else
+			RefineTree(msa, GuideTree);
+
+		const char *Tree2 = ValueOpt("Tree2");
+		if (0 != Tree2)
+			{
+			TextFile f(Tree2, true);
+			GuideTree.ToFile(f);
+			}
 		}
 
 	SetSeqWeightMethod(g_SeqWeight2);
@@ -162,7 +223,6 @@ static void Muscle()
 		RefineVert(msa, GuideTree, g_uMaxIters - 2);
 	else
 		RefineHoriz(msa, GuideTree, g_uMaxIters - 2, false, false);
-
 
 #if	0
 // Refining by subfamilies is disabled as it didn't give better
@@ -174,28 +234,65 @@ static void Muscle()
 	ValidateMuscleIds(msa);
 	ValidateMuscleIds(GuideTree);
 
-	TextFile fileOut(g_pstrOutFileName, true);
-	MHackEnd(msa);
-	msa.ToFile(fileOut);
+	//TextFile fileOut(g_pstrOutFileName, true);
+	//MHackEnd(msa);
+	//msa.ToFile(fileOut);
+	MuscleOutput(msa);
 	}
 
 void Run()
 	{
+	SetStartTime();
 	Log("Started %s\n", GetTimeAsStr());
 	for (int i = 0; i < g_argc; ++i)
 		Log("%s ", g_argv[i]);
 	Log("\n");
 
+#if	TIMING
+	TICKS t1 = GetClockTicks();
+#endif
 	if (g_bRefine)
 		Refine();
+	else if (g_bRefineW)
+		{
+		extern void DoRefineW();
+		DoRefineW();
+		}
+	else if (g_bProfDB)
+		ProfDB();
 	else if (g_bSW)
 		Local();
 	else if (0 != g_pstrSPFileName)
 		DoSP();
 	else if (g_bProfile)
 		Profile();
+	else if (g_bPPScore)
+		PPScore();
+	else if (g_bPAS)
+		ProgAlignSubFams();
 	else
-		Muscle();
+		DoMuscle();
+
+#if	TIMING
+	extern TICKS g_ticksDP;
+	extern TICKS g_ticksObjScore;
+	TICKS t2 = GetClockTicks();
+	TICKS TotalTicks = t2 - t1;
+	TICKS ticksOther = TotalTicks - g_ticksDP - g_ticksObjScore;
+	double dSecs = TicksToSecs(TotalTicks);
+	double PctDP = (double) g_ticksDP*100.0/(double) TotalTicks;
+	double PctOS = (double) g_ticksObjScore*100.0/(double) TotalTicks;
+	double PctOther = (double) ticksOther*100.0/(double) TotalTicks;
+	Log("                 Ticks     Secs    Pct\n");
+	Log("          ============  =======  =====\n");
+	Log("DP        %12ld  %7.2f  %5.1f%%\n",
+	  (long) g_ticksDP, TicksToSecs(g_ticksDP), PctDP);
+	Log("OS        %12ld  %7.2f  %5.1f%%\n",
+	  (long) g_ticksObjScore, TicksToSecs(g_ticksObjScore), PctOS);
+	Log("Other     %12ld  %7.2f  %5.1f%%\n",
+	  (long) ticksOther, TicksToSecs(ticksOther), PctOther);
+	Log("Total     %12ld  %7.2f  100.0%%\n", (long) TotalTicks, dSecs);
+#endif
 
 	ListDiagSavings();
 	Log("Finished %s\n", GetTimeAsStr());

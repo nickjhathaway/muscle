@@ -3,18 +3,45 @@
 #include "profile.h"
 #include "enumopts.h"
 
+const double DEFAULT_MAX_MB_FRACT = 0.8;
+
 SCORE g_scoreCenter = 0;
 SCORE g_scoreGapExtend = 0;
+SCORE g_scoreGapOpen2 = MINUS_INFINITY;
+SCORE g_scoreGapExtend2 = MINUS_INFINITY;
 SCORE g_scoreGapAmbig = 0;
 SCORE g_scoreAmbigFactor = 0;
 
+extern SCOREMATRIX VTML_LA;
+extern SCOREMATRIX PAM200;
+extern SCOREMATRIX PAM200NoCenter;
+extern SCOREMATRIX VTML_SP;
+extern SCOREMATRIX VTML_SPNoCenter;
+extern SCOREMATRIX NUC_SP;
+
+PTR_SCOREMATRIX g_ptrScoreMatrix;
+
 const char *g_pstrInFileName = "-";
 const char *g_pstrOutFileName = "-";
+const char *g_pstrFASTAOutFileName = 0;
+const char *g_pstrMSFOutFileName = 0;
+const char *g_pstrClwOutFileName = 0;
+const char *g_pstrClwStrictOutFileName = 0;
+const char *g_pstrHTMLOutFileName = 0;
+const char *g_pstrPHYIOutFileName = 0;
+const char *g_pstrPHYSOutFileName = 0;
 
 const char *g_pstrFileName1 = 0;
 const char *g_pstrFileName2 = 0;
 
 const char *g_pstrSPFileName = 0;
+const char *g_pstrMatrixFileName = 0;
+
+const char *g_pstrUseTreeFileName = 0;
+bool g_bUseTreeNoWarn = false;
+
+const char *g_pstrComputeWeightsFileName;
+const char *g_pstrScoreFileName;
 
 const char *g_pstrProf1FileName = 0;
 const char *g_pstrProf2FileName = 0;
@@ -22,6 +49,14 @@ const char *g_pstrProf2FileName = 0;
 unsigned g_uSmoothWindowLength = 7;
 unsigned g_uAnchorSpacing = 32;
 unsigned g_uMaxTreeRefineIters = 1;
+
+unsigned g_uRefineWindow = 200;
+unsigned g_uWindowFrom = 0;
+unsigned g_uWindowTo = 0;
+unsigned g_uSaveWindow = uInsane;
+unsigned g_uWindowOffset = 0;
+
+unsigned g_uMaxSubFamCount = 5;
 
 unsigned g_uHydrophobicRunLength = 5;
 float g_dHydroFactor = (float) 1.2;
@@ -33,8 +68,6 @@ unsigned g_uDiagMargin = 5;
 float g_dSUEFF = (float) 0.1;
 
 bool g_bPrecompiledCenter = true;
-bool g_bTermGapsHalf = true;
-bool g_bTermGapsHalfLonger = false;
 bool g_bNormalizeCounts = false;
 bool g_bDiags1 = false;
 bool g_bDiags2 = false;
@@ -42,16 +75,19 @@ bool g_bAnchors = true;
 bool g_bQuiet = false;
 bool g_bVerbose = false;
 bool g_bRefine = false;
+bool g_bRefineW = false;
+bool g_bProfDB = false;
 bool g_bLow = false;
 bool g_bSW = false;
-bool g_bTermGaps4 = true;
 bool g_bCluster = false;
 bool g_bProfile = false;
+bool g_bPPScore = false;
 bool g_bBrenner = false;
 bool g_bDimer = false;
 bool g_bVersion = false;
 bool g_bStable = false;
-bool g_bFASTA = true;
+bool g_bFASTA = false;
+bool g_bPAS = false;
 
 #if	DEBUG
 bool g_bCatchExceptions = false;
@@ -63,9 +99,12 @@ bool g_bMSF = false;
 bool g_bAln = false;
 bool g_bClwStrict = false;
 bool g_bHTML = false;
+bool g_bPHYI = false;
+bool g_bPHYS = false;
 
-unsigned g_uMaxIters = 16;
+unsigned g_uMaxIters = 8;
 unsigned long g_ulMaxSecs = 0;
+unsigned g_uMaxMB = 500;
 
 PPSCORE g_PPScore = PPSCORE_LE;
 OBJSCORE g_ObjScore = OBJSCORE_SPM;
@@ -85,6 +124,8 @@ ROOT g_Root2 = ROOT_Pseudo;
 bool g_bDiags;
 
 SEQTYPE g_SeqType = SEQTYPE_Auto;
+
+TERMGAPS g_TermGaps = TERMGAPS_Half;
 
 //------------------------------------------------------
 // These parameters depending on the chosen prof-prof
@@ -117,13 +158,16 @@ void ListParams()
 	Log("Max iterations           %u\n", g_uMaxIters);
 	Log("Max trees                %u\n", g_uMaxTreeRefineIters);
 	Log("Max time                 %s\n", MaxSecsToStr());
+	Log("Max MB                   %u\n", g_uMaxMB);
 	Log("Gap open                 %g\n", g_scoreGapOpen);
 	Log("Gap extend (dimer)       %g\n", g_scoreGapExtend);
 	Log("Gap ambig factor         %g\n", g_scoreAmbigFactor);
 	Log("Gap ambig penalty        %g\n", g_scoreGapAmbig);
 	Log("Center (LE)              %g\n", g_scoreCenter);
+	Log("Term gaps                %s\n", TERMGAPSToStr(g_TermGaps));
 
 	Log("Smooth window length     %u\n", g_uSmoothWindowLength);
+	Log("Refine window length     %u\n", g_uRefineWindow);
 	Log("Min anchor spacing       %u\n", g_uAnchorSpacing);
 	Log("Min diag length (lambda) %u\n", g_uMinDiagLength);
 	Log("Diag margin (mu)         %u\n", g_uDiagMargin);
@@ -136,19 +180,19 @@ void ListParams()
 	Log("Min anchor score         %g\n", g_dMinSmoothScore);
 	Log("SUEFF                    %g\n", g_dSUEFF);
 
-	Log("Term gaps half           %s\n", BoolToStr(g_bTermGapsHalf));
-	Log("Term gaps half longer    %s\n", BoolToStr(g_bTermGapsHalfLonger));
-	Log("Term gaps four ways      %s\n", BoolToStr(g_bTermGaps4));
 	Log("Brenner root MSA         %s\n", BoolToStr(g_bBrenner));
 	Log("Normalize counts         %s\n", BoolToStr(g_bNormalizeCounts));
 	Log("Diagonals (1)            %s\n", BoolToStr(g_bDiags1));
 	Log("Diagonals (2)            %s\n", BoolToStr(g_bDiags2));
 	Log("Anchors                  %s\n", BoolToStr(g_bAnchors));
 	Log("MSF output format        %s\n", BoolToStr(g_bMSF));
+	Log("Phylip interleaved       %s\n", BoolToStr(g_bPHYI));
+	Log("Phylip sequential        %s\n", BoolToStr(g_bPHYS));
 	Log("ClustalW output format   %s\n", BoolToStr(g_bAln));
 	Log("Catch exceptions         %s\n", BoolToStr(g_bCatchExceptions));
 	Log("Quiet                    %s\n", BoolToStr(g_bQuiet));
 	Log("Refine                   %s\n", BoolToStr(g_bRefine));
+	Log("ProdfDB                  %s\n", BoolToStr(g_bProfDB));
 	Log("Low complexity profiles  %s\n", BoolToStr(g_bLow));
 
 	Log("Objective score          %s\n", OBJSCOREToStr(g_ObjScore));
@@ -168,8 +212,12 @@ void ListParams()
 
 static void SetDefaultsLE()
 	{
-	g_scoreGapOpen = (SCORE) -3.00;
-	g_scoreCenter = (SCORE) -0.55;
+	g_ptrScoreMatrix = &VTML_LA;
+
+	//g_scoreGapOpen = (SCORE) -3.00;
+	//g_scoreCenter = (SCORE) -0.55;
+	g_scoreGapOpen = (SCORE) -2.9;
+	g_scoreCenter = (SCORE) -0.52;
 
 	g_bNormalizeCounts = true;
 
@@ -179,10 +227,15 @@ static void SetDefaultsLE()
 	g_dSmoothScoreCeil = 3.0;
 	g_dMinBestColScore = 2.0;
 	g_dMinSmoothScore = 1.0;
+
+	g_Distance1 = DISTANCE_Kmer6_6;
+	g_Distance2 = DISTANCE_PctIdKimura;
 	}
 
 static void SetDefaultsSP()
 	{
+	g_ptrScoreMatrix = &PAM200;
+
 	g_scoreGapOpen = -1439;
 	g_scoreCenter = 0.0;	// center pre-added into score mx
 
@@ -191,10 +244,15 @@ static void SetDefaultsSP()
 	g_dSmoothScoreCeil = 200.0;
 	g_dMinBestColScore = 300.0;
 	g_dMinSmoothScore = 125.0;
+
+	g_Distance1 = DISTANCE_Kmer6_6;
+	g_Distance2 = DISTANCE_PctIdKimura;
 	}
 
 static void SetDefaultsSV()
 	{
+	g_ptrScoreMatrix = &VTML_SP;
+
 	g_scoreGapOpen = -300;
 	g_scoreCenter = 0.0;	// center pre-added into score mx
 
@@ -203,18 +261,62 @@ static void SetDefaultsSV()
 	g_dSmoothScoreCeil = 90.0;
 	g_dMinBestColScore = 130.0;
 	g_dMinSmoothScore = 40.0;
+
+	g_Distance1 = DISTANCE_Kmer6_6;
+	g_Distance2 = DISTANCE_PctIdKimura;
 	}
 
-static void SetDefaultsSPN()
+//static void SetDefaultsSPN()
+//	{
+//	g_ptrScoreMatrix = &NUC_SP;
+//
+//	g_scoreGapOpen = -400;
+//	g_scoreCenter = 0.0;	// center pre-added into score mx
+//
+//	g_bNormalizeCounts = false;
+//
+//	g_dSmoothScoreCeil = 999.0;		// disable
+//	g_dMinBestColScore = 90;
+//	g_dMinSmoothScore = 90;
+//
+//	g_Distance1 = DISTANCE_Kmer4_6;
+//	g_Distance2 = DISTANCE_PctIdKimura;
+//	}
+
+static void SetDefaultsSPN_DNA()
 	{
+	g_ptrScoreMatrix = &NUC_SP;
+
 	g_scoreGapOpen = -400;
 	g_scoreCenter = 0.0;	// center pre-added into score mx
+	g_scoreGapExtend = 0.0;
 
 	g_bNormalizeCounts = false;
 
 	g_dSmoothScoreCeil = 999.0;		// disable
 	g_dMinBestColScore = 90;
 	g_dMinSmoothScore = 90;
+
+	g_Distance1 = DISTANCE_Kmer4_6;
+	g_Distance2 = DISTANCE_PctIdKimura;
+	}
+
+static void SetDefaultsSPN_RNA()
+	{
+	g_ptrScoreMatrix = &NUC_SP;
+
+	g_scoreGapOpen = -420;
+	g_scoreCenter = -300;	// total center = NUC_EXTEND - 300 
+	g_scoreGapExtend = 0.0;
+
+	g_bNormalizeCounts = false;
+
+	g_dSmoothScoreCeil = 999.0;		// disable
+	g_dMinBestColScore = 90;
+	g_dMinSmoothScore = 90;
+
+	g_Distance1 = DISTANCE_Kmer4_6;
+	g_Distance2 = DISTANCE_PctIdKimura;
 	}
 
 static void FlagParam(const char *OptName, bool *ptrParam, bool bValueIfFlagSet)
@@ -264,17 +366,8 @@ static void EnumParam(const char *OptName, EnumOpt *Opts, int *Param)
 		}
 	}
 
-static void SetPPScore()
+static void SetPPDefaultParams()
 	{
-	if (FlagOpt("SP"))
-		g_PPScore = PPSCORE_SP;
-	else if (FlagOpt("LE"))
-		g_PPScore = PPSCORE_LE;
-	else if (FlagOpt("SV"))
-		g_PPScore = PPSCORE_SV;
-	else if (FlagOpt("SPN"))
-		g_PPScore = PPSCORE_SPN;
-
 	switch (g_PPScore)
 		{
 	case PPSCORE_SP:
@@ -290,23 +383,79 @@ static void SetPPScore()
 		break;
 
 	case PPSCORE_SPN:
-		SetDefaultsSPN();
+		switch (g_Alpha)
+			{
+		case ALPHA_DNA:
+			SetDefaultsSPN_DNA();
+			break;
+		case ALPHA_RNA:
+			SetDefaultsSPN_RNA();
+			break;
+		default:
+			Quit("Invalid alpha %d", g_Alpha);
+			}
 		break;
 
 	default:
 		Quit("Invalid g_PPScore");
 		}
+	}
 
-	g_scoreGapExtend = (SCORE) (g_scoreCenter/2.0);
-	g_scoreGapAmbig = (SCORE) (g_scoreGapOpen*g_scoreAmbigFactor);
+static void SetPPCommandLineParams()
+	{
+	FloatParam("GapOpen", &g_scoreGapOpen);
+	FloatParam("GapOpen2", &g_scoreGapOpen2);
+	FloatParam("GapExtend", &g_scoreGapExtend);
+	FloatParam("GapExtend2", &g_scoreGapExtend2);
+	FloatParam("GapAmbig", &g_scoreAmbigFactor);
+	FloatParam("Center", &g_scoreCenter);
+	FloatParam("SmoothScoreCeil", &g_dSmoothScoreCeil);
+	FloatParam("MinBestColScore", &g_dMinBestColScore);
+	FloatParam("MinSmoothScore", &g_dMinSmoothScore);
 
-	SetScoreMatrix();
+	EnumParam("Distance1", DISTANCE_Opts, (int *) &g_Distance1);
+	EnumParam("Distance2", DISTANCE_Opts, (int *) &g_Distance2);
+	}
+
+void SetPPScore(bool bRespectFlagOpts)
+	{
+	if (bRespectFlagOpts)
+		{
+		if (FlagOpt("SP"))
+			g_PPScore = PPSCORE_SP;
+		else if (FlagOpt("LE"))
+			g_PPScore = PPSCORE_LE;
+		else if (FlagOpt("SV"))
+			g_PPScore = PPSCORE_SV;
+		else if (FlagOpt("SPN"))
+			g_PPScore = PPSCORE_SPN;
+		}
+
+	switch (g_PPScore)
+		{
+	case PPSCORE_LE:
+	case PPSCORE_SP:
+	case PPSCORE_SV:
+		if (ALPHA_RNA == g_Alpha || ALPHA_DNA == g_Alpha)
+			g_PPScore = PPSCORE_SPN;
+		break;
+	case PPSCORE_SPN:
+		if (ALPHA_Amino == g_Alpha)
+			g_PPScore = PPSCORE_LE;
+		break;
+		}
+
+	SetPPDefaultParams();
+	SetPPCommandLineParams();
+
+	if (g_bVerbose)
+		ListParams();
 	}
 
 void SetPPScore(PPSCORE p)
 	{
 	g_PPScore = p;
-	SetPPScore();
+	SetPPScore(true);
 	}
 
 static void SetMaxSecs()
@@ -340,28 +489,46 @@ bool MissingCommand()
 
 void SetParams()
 	{
-	SetPPScore();
 	SetMaxSecs();
 
 	StrParam("in", &g_pstrInFileName);
 	StrParam("out", &g_pstrOutFileName);
 
+	StrParam("FASTAOut", &g_pstrFASTAOutFileName);
+	StrParam("ClwOut", &g_pstrClwOutFileName);
+	StrParam("ClwStrictOut", &g_pstrClwStrictOutFileName);
+	StrParam("HTMLOut", &g_pstrHTMLOutFileName);
+	StrParam("PHYIOut", &g_pstrPHYIOutFileName);
+	StrParam("PHYSOut", &g_pstrPHYSOutFileName);
+	StrParam("MSFOut", &g_pstrMSFOutFileName);
+
 	StrParam("in1", &g_pstrFileName1);
 	StrParam("in2", &g_pstrFileName2);
 
+	StrParam("Matrix", &g_pstrMatrixFileName);
 	StrParam("SPScore", &g_pstrSPFileName);
 
-	FlagParam("TermGapsHalf", &g_bTermGapsHalf, true);
-	FlagParam("TermGapsHalfLonger", &g_bTermGapsHalfLonger, true);
+	StrParam("UseTree_NoWarn", &g_pstrUseTreeFileName);
+	if (0 != g_pstrUseTreeFileName)
+		g_bUseTreeNoWarn = true;
 
-	FlagParam("TermGapsFull", &g_bTermGapsHalf, false);
-	FlagParam("TermGapsFull", &g_bTermGapsHalfLonger, false);
+	StrParam("UseTree", &g_pstrUseTreeFileName);
+	StrParam("ComputeWeights", &g_pstrComputeWeightsFileName);
+	StrParam("ScoreFile", &g_pstrScoreFileName);
 
 	FlagParam("Core", &g_bCatchExceptions, false);
 	FlagParam("NoCore", &g_bCatchExceptions, true);
 
 	FlagParam("Diags1", &g_bDiags1, true);
 	FlagParam("Diags2", &g_bDiags2, true);
+
+	bool Diags = false;
+	FlagParam("Diags", &Diags, true);
+	if (Diags)
+		{
+		g_bDiags1 = true;
+		g_bDiags2 = true;
+		}
 
 	FlagParam("Anchors", &g_bAnchors, true);
 	FlagParam("NoAnchors", &g_bAnchors, false);
@@ -372,17 +539,22 @@ void SetParams()
 	FlagParam("Stable", &g_bStable, true);
 	FlagParam("Group", &g_bStable, false);
 	FlagParam("Refine", &g_bRefine, true);
+	FlagParam("RefineW", &g_bRefineW, true);
+	FlagParam("ProfDB", &g_bProfDB, true);
 	FlagParam("SW", &g_bSW, true);
 	FlagParam("Cluster", &g_bCluster, true);
 	FlagParam("Profile", &g_bProfile, true);
-	FlagParam("TermGaps4", &g_bTermGaps4, true);
+	FlagParam("PPScore", &g_bPPScore, true);
 	FlagParam("Brenner", &g_bBrenner, true);
 	FlagParam("Dimer", &g_bDimer, true);
 
 	FlagParam("MSF", &g_bMSF, true);
+	FlagParam("PHYI", &g_bPHYI, true);
+	FlagParam("PHYS", &g_bPHYS, true);
 	FlagParam("clw", &g_bAln, true);
 	FlagParam("HTML", &g_bHTML, true);
 	FlagParam("FASTA", &g_bFASTA, true);
+	FlagParam("PAS", &g_bPAS, true);
 
 	bool b = false;
 	FlagParam("clwstrict", &b, true);
@@ -395,26 +567,23 @@ void SetParams()
 	UintParam("MaxIters", &g_uMaxIters);
 	UintParam("MaxTrees", &g_uMaxTreeRefineIters);
 	UintParam("SmoothWindow", &g_uSmoothWindowLength);
+	UintParam("RefineWindow", &g_uRefineWindow);
+	UintParam("FromWindow", &g_uWindowFrom);
+	UintParam("ToWindow", &g_uWindowTo);
+	UintParam("SaveWindow", &g_uSaveWindow);
+	UintParam("WindowOffset", &g_uWindowOffset);
 	UintParam("AnchorSpacing", &g_uAnchorSpacing);
 	UintParam("DiagLength", &g_uMinDiagLength);
 	UintParam("DiagMargin", &g_uDiagMargin);
 	UintParam("DiagBreak", &g_uMaxDiagBreak);
 	UintParam("Hydro", &g_uHydrophobicRunLength);
+	UintParam("MaxSubFam", &g_uMaxSubFamCount);
 
-	FloatParam("GapOpen", &g_scoreGapOpen);
-	FloatParam("GapExtend", &g_scoreGapExtend);
-	FloatParam("GapAmbig", &g_scoreAmbigFactor);
-	FloatParam("Center", &g_scoreCenter);
-	FloatParam("SmoothScoreCeil", &g_dSmoothScoreCeil);
-	FloatParam("MinBestColScore", &g_dMinBestColScore);
-	FloatParam("MinSmoothScore", &g_dMinSmoothScore);
 	FloatParam("SUEFF", &g_dSUEFF);
 	FloatParam("HydroFactor", &g_dHydroFactor);
 
 	EnumParam("ObjScore", OBJSCORE_Opts, (int *) &g_ObjScore);
-
-	EnumParam("Distance1", DISTANCE_Opts, (int *) &g_Distance1);
-	EnumParam("Distance2", DISTANCE_Opts, (int *) &g_Distance2);
+	EnumParam("TermGaps", TERMGAPS_Opts, (int *) &g_TermGaps);
 
 	EnumParam("Weight1", SEQWEIGHT_Opts, (int *) &g_SeqWeight1);
 	EnumParam("Weight2", SEQWEIGHT_Opts, (int *) &g_SeqWeight2);
@@ -432,4 +601,8 @@ void SetParams()
 
 	if (g_bDimer)
 		g_bPrecompiledCenter = false;
+
+	UintParam("MaxMB", &g_uMaxMB);
+	if (0 == ValueOpt("MaxMB"))
+		g_uMaxMB = (unsigned) (GetRAMSizeMB()*DEFAULT_MAX_MB_FRACT);
 	}

@@ -1,10 +1,10 @@
 ofiles=`echo *.o`
 
-rm *.o
+# find -name "*.o" -exec "rm" "{}" ";"
 
-make -f Makefile > make.out 2> make.err
+make -f Makefile 2> make.err
 
-rm *.o
+# rm *.o
 
 cat make.err
 ls -l muscle

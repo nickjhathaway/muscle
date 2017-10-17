@@ -33,22 +33,19 @@ void RefineTreeE(MSA &msa, const SeqVect &v, Tree &tree, ProgNode *ProgNodes)
 	DiffTreesE(Tree2, tree, uNewNodeIndexToOldNodeIndex);
 
 	unsigned uRoot = Tree2.GetRootNodeIndex();
-	if (NODE_CHANGED != uNewNodeIndexToOldNodeIndex[uRoot])
+	if (NODE_CHANGED == uNewNodeIndexToOldNodeIndex[uRoot])
 		{
-		ProgressStepsDone();
-		return;
-		}
-
-	MSA msa2;
-	RealignDiffsE(msa, v, Tree2, tree, uNewNodeIndexToOldNodeIndex, msa2, ProgNodes);
-
+		MSA msa2;
+		RealignDiffsE(msa, v, Tree2, tree, uNewNodeIndexToOldNodeIndex, msa2, ProgNodes);
+		tree.Copy(Tree2);
+		msa.Copy(msa2);
 #if	DEBUG
-	ValidateMuscleIds(msa2);
+		ValidateMuscleIds(msa2);
 #endif
+		}
 
 	delete[] uNewNodeIndexToOldNodeIndex;
 
-	tree.Copy(Tree2);
-	msa.Copy(msa2);
 	SetCurrentAlignment(msa);
+	ProgressStepsDone();
 	}

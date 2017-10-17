@@ -197,7 +197,7 @@ void FindAnchorCols(const MSA &msa, unsigned AnchorCols[],
 	SCORE *SmoothScore = new SCORE[uColCount];
 	unsigned *BestCols = new unsigned[uColCount];
 
-	const SCORE scoreQuality = ObjScoreSP(msa, MatchScore);
+	GetLetterScores(msa, MatchScore);
 	WindowSmooth(MatchScore, uColCount, g_uSmoothWindowLength, SmoothScore,
 	  g_dSmoothScoreCeil);
 

@@ -6,19 +6,31 @@
 #define DEBUG	1
 #endif
 
+#if	_MSC_VER
+#define TIMING	0
+#endif
+
+#define VER_3_52	0
+
 #ifdef	_MSC_VER	// Miscrosoft compiler
 #pragma warning(disable : 4800)	// disable int-bool conversion warning
 #endif
 
-#define MUSCLE_LONG_VERSION		"MUSCLE v3.5 by Robert C. Edgar"
+#define MUSCLE_LONG_VERSION		"MUSCLE v3.6 by Robert C. Edgar"
 #define MUSCLE_MAJOR_VERSION	"3"
-#define MUSCLE_MINOR_VERSION	"5"
+#define MUSCLE_MINOR_VERSION	"6"
 
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
+
+#define DOUBLE_AFFINE	0
+#define SINGLE_AFFINE	1
+#define PAF				0
+#define HYDRO			1
+
 #include "types.h"
 #include "intmath.h"
 #include "alpha.h"
@@ -150,6 +162,7 @@ void SetListFileName(const char *ptrListFileName, bool bAppend);
 void ModelFromAlign(const char *strInputFileName, const char *strModelFileName,
   double dMaxNIC);
 double GetMemUseMB();
+double GetRAMSizeMB();
 double GetPeakMemUseMB();
 void CheckMemUse();
 const char *ElapsedTimeAsString();
@@ -183,6 +196,8 @@ void ValidateMuscleIds(const MSA &msa);
 void ValidateMuscleIds(const Tree &tree);
 void TraceBackToPath(int **TraceBack, unsigned uLengthA,
   unsigned uLengthB, PWPath &Path);
+void BitTraceBack(char **TraceBack, unsigned uLengthA, unsigned uLengthB,
+  char LastEdge, PWPath &Path);
 SCORE AlignTwoMSAs(const MSA &msa1, const MSA &msa2, MSA &msaOut, PWPath &Path,
   bool bLockLeft = false, bool bLockRight = false);
 SCORE AlignTwoProfs(
@@ -205,6 +220,8 @@ SCORE GlobalAlignSimple(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, PWPath &Path);
 SCORE GlobalAlignSP(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, PWPath &Path);
+SCORE GlobalAlignSPN(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
+  unsigned uLengthB, PWPath &Path);
 SCORE GlobalAlignLE(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, PWPath &Path);
 void CalcThreeWayWeights(const Tree &tree, unsigned uNode1, unsigned uNode2,
@@ -220,6 +237,7 @@ void SetIter(unsigned uIter);
 void IncIter();
 void SetMaxIters(unsigned uMaxIters);
 void Progress(unsigned uStep, unsigned uTotalSteps);
+void Progress(const char *szFormat, ...);
 void SetStartTime();
 void ProgressStepsDone();
 void SetProgressDesc(const char szDesc[]);
@@ -253,7 +271,9 @@ FCOUNT SumCounts(const FCOUNT Counts[]);
 bool FlagOpt(const char *Name);
 const char *ValueOpt(const char *Name);
 void DoMuscle();
+void ProfDB();
 void DoSP();
+void ProgAlignSubFams();
 void Run();
 void ListParams();
 void OnException();
@@ -280,6 +300,7 @@ void MakeRootMSABrenner(SeqVect &v, const Tree &GuideTree, ProgNode Nodes[], MSA
 void Refine();
 void Local();
 void Profile();
+void PPScore();
 void UPGMA2(const DistCalc &DC, Tree &tree, LINKAGE Linkage);
 
 char *GetFastaSeq(FILE *f, unsigned *ptrSeqLength, char **ptrLabel,
@@ -291,8 +312,17 @@ void TraceBackSW(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uPrefixLengthAMax, unsigned uPrefixLengthBMax, PWPath &Path);
 void DiffPaths(const PWPath &p1, const PWPath &p2, unsigned Edges1[],
   unsigned *ptruDiffCount1, unsigned Edges2[], unsigned *ptruDiffCount2);
+void SetPPScore(bool bRespectFlagOpts = true);
 void SetPPScore(PPSCORE p);
 SCORE GlobalAlignDimer(const ProfPos *PA, unsigned uLengthA, const ProfPos *PB,
   unsigned uLengthB, PWPath &Path);
 bool MissingCommand();
 void Credits();
+void ProfileProfile(MSA &msa1, MSA &msa2, MSA &msaOut);
+void MHackStart(SeqVect &v);
+void MHackEnd(MSA &msa);
+void WriteScoreFile(const MSA &msa);
+char ConsensusChar(const ProfPos &PP);
+void Stabilize(const MSA &msa, MSA &msaStable);
+void MuscleOutput(MSA &msa);
+PTR_SCOREMATRIX ReadMx(TextFile &File);

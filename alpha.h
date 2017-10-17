@@ -3,6 +3,9 @@
 
 bool StrHasAmino(const char *Str);
 bool StrHasGap(const char *Str);
+void ClearInvalidLetterWarning();
+void InvalidLetterWarning(char c, char w);
+void ReportInvalidLetters();
 
 extern unsigned g_CharToLetter[];
 extern unsigned g_CharToLetterEx[];
@@ -71,10 +74,18 @@ enum NX
 	NX_T,
 	NX_U = NX_T,
 
-	NX_N,	// Any
-	NX_R,	// A or G
-	NX_Y,	// C or T/U
-
+    NX_M, // AC
+    NX_R, // AG
+    NX_W, // AT
+    NX_S, // CG
+    NX_Y, // CT
+    NX_K, // GT
+    NX_V, // ACG
+    NX_H, // ACT
+    NX_D, // AGT
+    NX_B, // CGT
+    NX_X, // GATC
+    NX_N, // GATC
 	NX_GAP
 	};
 const unsigned NX_COUNT = NX_GAP + 1;
@@ -89,5 +100,7 @@ extern unsigned g_AlphaSize;
 void SetAlpha(ALPHA Alpha);
 char GetWildcardChar();
 bool IsNucleo(char c);
+bool IsDNA(char c);
+bool IsRNA(char c);
 
 #endif	// alpha_h

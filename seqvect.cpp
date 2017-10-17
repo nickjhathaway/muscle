@@ -177,6 +177,30 @@ unsigned SeqVect::GetSeqId(unsigned uSeqIndex) const
 	return ptrSeq->GetId();
 	}
 
+unsigned SeqVect::GetSeqIdFromName(const char *Name) const
+	{
+	const unsigned uSeqCount = GetSeqCount();
+	for (unsigned i = 0; i < uSeqCount; ++i)
+		{
+		if (!strcmp(Name, GetSeqName(i)))
+			return GetSeqId(i);
+		}
+	Quit("SeqVect::GetSeqIdFromName(%s): not found", Name);
+	return 0;
+	}
+
+Seq &SeqVect::GetSeqById(unsigned uId)
+	{
+	const unsigned uSeqCount = GetSeqCount();
+	for (unsigned i = 0; i < uSeqCount; ++i)
+		{
+		if (GetSeqId(i) == uId)
+			return GetSeq(i);
+		}
+	Quit("SeqVect::GetSeqIdByUd(%d): not found", uId);
+	return (Seq &) *((Seq *) 0);
+	}
+
 unsigned SeqVect::GetSeqLength(unsigned uSeqIndex) const
 	{
 	assert(uSeqIndex < size());
@@ -218,12 +242,13 @@ ALPHA SeqVect::GuessAlpha() const
 	unsigned uSeqIndex = 0;
 	unsigned uPos = 0;
 	unsigned uSeqLength = GetSeqLength(0);
-	unsigned uNucleoCount = 0;
+	unsigned uDNACount = 0;
+	unsigned uRNACount = 0;
 	unsigned uTotal = 0;
 	const Seq *ptrSeq = &GetSeq(0);
 	for (;;)
 		{
-		if (uPos >= uSeqLength)
+		while (uPos >= uSeqLength)
 			{
 			++uSeqIndex;
 			if (uSeqIndex >= uSeqCount)
@@ -232,26 +257,34 @@ ALPHA SeqVect::GuessAlpha() const
 			uSeqLength = ptrSeq->Length();
 			uPos = 0;
 			}
+		if (uSeqIndex >= uSeqCount)
+			break;
 		char c = ptrSeq->at(uPos++);
 		if (IsGapChar(c))
 			continue;
-		if (IsNucleo(c))
-			++uNucleoCount;
+		if (IsDNA(c))
+			++uDNACount;
+		if (IsRNA(c))
+			++uRNACount;
 		++uTotal;
 		if (uTotal >= CHAR_COUNT)
 			break;
 		}
-	if (uTotal != 0 && ((uNucleoCount*100)/uTotal) >= MIN_NUCLEO_PCT)
-		return ALPHA_Nucleo;
+	if (uTotal != 0 && ((uDNACount*100)/uTotal) >= MIN_NUCLEO_PCT)
+		return ALPHA_DNA;
+	if (uTotal != 0 && ((uRNACount*100)/uTotal) >= MIN_NUCLEO_PCT)
+		return ALPHA_RNA;
 	return ALPHA_Amino;
 	}
 
 void SeqVect::FixAlpha()
 	{
+	ClearInvalidLetterWarning();
 	unsigned uSeqCount = Length();
 	for (unsigned uSeqIndex = 0; uSeqIndex < uSeqCount; ++uSeqIndex)
 		{
 		Seq *ptrSeq = at(uSeqIndex);
 		ptrSeq->FixAlpha();
 		}
+	ReportInvalidLetters();
 	}

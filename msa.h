@@ -26,6 +26,8 @@ public:
 	void ToMSFFile(TextFile &File, const char *ptrComment = 0) const;
 	void ToAlnFile(TextFile &File) const;
 	void ToHTMLFile(TextFile &File) const;
+	void ToPhySequentialFile(TextFile &File) const;
+	void ToPhyInterleavedFile(TextFile &File) const;
 
 	void SetSize(unsigned uSeqCount, unsigned uColCount);
 	void SetSeqCount(unsigned uSeqCount);
@@ -35,6 +37,7 @@ public:
 	const char *GetSeqName(unsigned uSeqIndex) const;
 	unsigned GetSeqId(unsigned uSeqIndex) const;
 	unsigned GetSeqIndex(unsigned uId) const;
+	bool GetSeqIndex(unsigned uId, unsigned *ptruIndex) const;
 	double GetOcc(unsigned uColIndex) const;
 	void GetFractionalWeightedCounts(unsigned uColIndex, bool bNormalize,
 	  FCOUNT fcCounts[], FCOUNT *ptrfcGapStart, FCOUNT *ptrfcGapEnd,
@@ -69,6 +72,8 @@ public:
 	void SetSeqWeight(unsigned uSeqIndex, WEIGHT w) const;
 	void NormalizeWeights(WEIGHT wTotal) const;
 	bool WeightsSet() const;
+
+	unsigned GetGCGCheckSum(unsigned uSeqIndex) const;
 
 	ALPHA GuessAlpha() const;
 	void FixAlpha();
