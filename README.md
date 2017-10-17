@@ -1,4 +1,4 @@
 # muscle
 A repo to track the multiple aligner muscle
 
-version 3.5
+version 3.6
