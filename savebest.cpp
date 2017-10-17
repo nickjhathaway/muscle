@@ -3,7 +3,7 @@
 #include "textfile.h"
 #include <time.h>
 
-static MSA *ptrBestMSA;
+MSA *ptrBestMSA;
 static const char *pstrOutputFileName;
 
 void SetOutputFileName(const char *out)

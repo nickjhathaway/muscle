@@ -30,6 +30,8 @@ const char *g_pstrClwStrictOutFileName = 0;
 const char *g_pstrHTMLOutFileName = 0;
 const char *g_pstrPHYIOutFileName = 0;
 const char *g_pstrPHYSOutFileName = 0;
+const char *g_pstrDistMxFileName1 = 0;
+const char *g_pstrDistMxFileName2 = 0;
 
 const char *g_pstrFileName1 = 0;
 const char *g_pstrFileName2 = 0;
@@ -79,7 +81,7 @@ bool g_bRefineW = false;
 bool g_bProfDB = false;
 bool g_bLow = false;
 bool g_bSW = false;
-bool g_bCluster = false;
+bool g_bClusterOnly = false;
 bool g_bProfile = false;
 bool g_bPPScore = false;
 bool g_bBrenner = false;
@@ -88,6 +90,8 @@ bool g_bVersion = false;
 bool g_bStable = false;
 bool g_bFASTA = false;
 bool g_bPAS = false;
+bool g_bTomHydro = false;
+bool g_bMakeTree = false;
 
 #if	DEBUG
 bool g_bCatchExceptions = false;
@@ -413,6 +417,9 @@ static void SetPPCommandLineParams()
 	FloatParam("MinBestColScore", &g_dMinBestColScore);
 	FloatParam("MinSmoothScore", &g_dMinSmoothScore);
 
+	EnumParam("Distance", DISTANCE_Opts, (int *) &g_Distance1);
+	EnumParam("Distance", DISTANCE_Opts, (int *) &g_Distance2);
+
 	EnumParam("Distance1", DISTANCE_Opts, (int *) &g_Distance1);
 	EnumParam("Distance2", DISTANCE_Opts, (int *) &g_Distance2);
 	}
@@ -515,6 +522,8 @@ void SetParams()
 	StrParam("UseTree", &g_pstrUseTreeFileName);
 	StrParam("ComputeWeights", &g_pstrComputeWeightsFileName);
 	StrParam("ScoreFile", &g_pstrScoreFileName);
+	StrParam("DistMx1", &g_pstrDistMxFileName1);
+	StrParam("DistMx2", &g_pstrDistMxFileName2);
 
 	FlagParam("Core", &g_bCatchExceptions, false);
 	FlagParam("NoCore", &g_bCatchExceptions, true);
@@ -542,7 +551,7 @@ void SetParams()
 	FlagParam("RefineW", &g_bRefineW, true);
 	FlagParam("ProfDB", &g_bProfDB, true);
 	FlagParam("SW", &g_bSW, true);
-	FlagParam("Cluster", &g_bCluster, true);
+	FlagParam("ClusterOnly", &g_bClusterOnly, true);
 	FlagParam("Profile", &g_bProfile, true);
 	FlagParam("PPScore", &g_bPPScore, true);
 	FlagParam("Brenner", &g_bBrenner, true);
@@ -555,6 +564,10 @@ void SetParams()
 	FlagParam("HTML", &g_bHTML, true);
 	FlagParam("FASTA", &g_bFASTA, true);
 	FlagParam("PAS", &g_bPAS, true);
+	FlagParam("MakeTree", &g_bMakeTree, true);
+
+	if (g_bStable)
+		Quit("-stable not supported in this version of muscle");
 
 	bool b = false;
 	FlagParam("clwstrict", &b, true);
@@ -576,8 +589,12 @@ void SetParams()
 	UintParam("DiagLength", &g_uMinDiagLength);
 	UintParam("DiagMargin", &g_uDiagMargin);
 	UintParam("DiagBreak", &g_uMaxDiagBreak);
-	UintParam("Hydro", &g_uHydrophobicRunLength);
 	UintParam("MaxSubFam", &g_uMaxSubFamCount);
+
+	UintParam("Hydro", &g_uHydrophobicRunLength);
+	FlagParam("TomHydro", &g_bTomHydro, true);
+	if (g_bTomHydro)
+		g_uHydrophobicRunLength = 0;
 
 	FloatParam("SUEFF", &g_dSUEFF);
 	FloatParam("HydroFactor", &g_dHydroFactor);
@@ -585,8 +602,14 @@ void SetParams()
 	EnumParam("ObjScore", OBJSCORE_Opts, (int *) &g_ObjScore);
 	EnumParam("TermGaps", TERMGAPS_Opts, (int *) &g_TermGaps);
 
+	EnumParam("Weight", SEQWEIGHT_Opts, (int *) &g_SeqWeight1);
+	EnumParam("Weight", SEQWEIGHT_Opts, (int *) &g_SeqWeight2);
+
 	EnumParam("Weight1", SEQWEIGHT_Opts, (int *) &g_SeqWeight1);
 	EnumParam("Weight2", SEQWEIGHT_Opts, (int *) &g_SeqWeight2);
+
+	EnumParam("Cluster", CLUSTER_Opts, (int *) &g_Cluster1);
+	EnumParam("Cluster", CLUSTER_Opts, (int *) &g_Cluster2);
 
 	EnumParam("Cluster1", CLUSTER_Opts, (int *) &g_Cluster1);
 	EnumParam("Cluster2", CLUSTER_Opts, (int *) &g_Cluster2);

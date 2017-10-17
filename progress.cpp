@@ -15,20 +15,6 @@ static bool g_bWipeDesc = false;
 static int g_nPrevDescLength;
 static unsigned g_uTotalSteps;
 
-double GetCheckMemUseMB()
-	{
-	unsigned MB = (unsigned) GetMemUseMB();
-	if (0 == g_uMaxMB || MB <= g_uMaxMB)
-		return MB;
-	fprintf(stderr, "\n\n*** MAX MEMORY %u MB EXCEEDED***\n", g_uMaxMB);
-	fprintf(stderr, "Memory allocated so far %u MB, physical RAM %u MB\n",
-	  MB, (unsigned) GetRAMSizeMB());
-	fprintf(stderr, "Use -maxmb <n> option to increase limit, where <n> is in MB.\n");
-	SaveCurrentAlignment();
-	exit(EXIT_FatalError);
-	return MB;
-	}
-
 const char *ElapsedTimeAsStr()
 	{
 	time_t Now = time(0);
@@ -41,7 +27,7 @@ const char *MemToStr(double MB)
 	if (MB < 0)
 		return "";
 
-	static char Str[9];
+	static char Str[16];
 	static double MaxMB = 0;
 	static double RAMMB = 0;
 
@@ -118,14 +104,14 @@ void Progress(const char *szFormat, ...)
 	if (g_bQuiet)
 		return;
 
-	double MB = GetCheckMemUseMB();
+	double MB = GetMemUseMB();
 
 	char szStr[4096];
 	va_list ArgList;
 	va_start(ArgList, szFormat);
 	vsprintf(szStr, szFormat, ArgList);
 
-	fprintf(g_fProgress, "\n%8.8s  %12s                    %s",
+	fprintf(g_fProgress, "%8.8s  %12s  %s",
 	  ElapsedTimeAsStr(),
 	  MemToStr(MB),
 	  szStr);
@@ -142,7 +128,7 @@ void Progress(unsigned uStep, unsigned uTotalSteps)
 		return;
 
 	double dPct = ((uStep + 1)*100.0)/uTotalSteps;
-	double MB = GetCheckMemUseMB();
+	double MB = GetMemUseMB();
 	fprintf(g_fProgress, "%8.8s  %12s  Iter %3u  %6.2f%%  %s",
 	  ElapsedTimeAsStr(),
 	  MemToStr(MB),
@@ -168,7 +154,7 @@ void ProgressStepsDone()
 
 	if (g_bVerbose)
 		{
-		double MB = GetCheckMemUseMB();
+		double MB = GetMemUseMB();
 		Log("Elapsed time %8.8s  Peak memory use %12s  Iteration %3u %s\n",
 		 ElapsedTimeAsStr(),
 		 MemToStr(MB),

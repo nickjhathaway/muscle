@@ -11,6 +11,8 @@ extern const char *g_pstrClwStrictOutFileName;
 extern const char *g_pstrHTMLOutFileName;
 extern const char *g_pstrPHYIOutFileName;
 extern const char *g_pstrPHYSOutFileName;
+extern const char *g_pstrDistMxFileName1;
+extern const char *g_pstrDistMxFileName2;
 
 extern const char *g_pstrFileName1;
 extern const char *g_pstrFileName2;
@@ -80,7 +82,7 @@ extern bool g_bRefineW;
 extern bool g_bRefineX;
 extern bool g_bLow;
 extern bool g_bSW;
-extern bool g_bCluster;
+extern bool g_bClusterOnly;
 extern bool g_bProfile;
 extern bool g_bProfDB;
 extern bool g_bPPScore;
@@ -90,6 +92,8 @@ extern bool g_bVersion;
 extern bool g_bStable;
 extern bool g_bFASTA;
 extern bool g_bPAS;
+extern bool g_bTomHydro;
+extern bool g_bMakeTree;
 
 extern PPSCORE g_PPScore;
 extern OBJSCORE g_ObjScore;

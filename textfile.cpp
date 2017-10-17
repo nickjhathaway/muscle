@@ -57,7 +57,9 @@ bool TextFile::GetLine(char szLine[], unsigned uBytes)
 	if (0 == uBytes)
 		Quit("TextFile::GetLine, buffer zero size");
 
-	memset(szLine, 0, uBytes);
+	
+	int FillVal = 0; // suppress warning from gcc that I don't understand
+	memset(szLine, FillVal, (size_t) uBytes);
 
 	unsigned uBytesCopied = 0;
 
@@ -83,6 +85,8 @@ bool TextFile::GetLine(char szLine[], unsigned uBytes)
 // As GetLine, but trim leading and trailing blanks; skip empty lines
 bool TextFile::GetTrimLine(char szLine[], unsigned uBytes)
 	{
+	if (uBytes == 0)
+		Quit("GetTrimLine");
 	for (;;)
 		{
 		bool bEOF = GetLine(szLine, uBytes);
@@ -132,6 +136,8 @@ void TextFile::PutFormat(const char szFormat[], ...)
 
 void TextFile::GetLineX(char szLine[], unsigned uBytes)
 	{
+	if (uBytes == 0)
+		Quit("GetLineX");
 	bool bEof = GetLine(szLine, uBytes);
 	if (bEof)
 		Quit("end-of-file in GetLineX");
@@ -330,16 +336,24 @@ void TextFile::SkipLine()
 
 void TextFile::SkipWhite()
 	{
+	bool bEof = SkipWhiteX();
+	if (bEof)
+		Quit("End-of-file skipping white space");
+	}
+
+bool TextFile::SkipWhiteX()
+	{
 	for (;;)
 		{
 		char c;
 		bool bEof = GetChar(c);
 		if (bEof)
-			Quit("End-of-file in SkipWhite");
+			return true;
 		if (!isspace(c))
 			{
 			PushBack(c);
 			break;
 			}
 		}
+	return false;
 	}

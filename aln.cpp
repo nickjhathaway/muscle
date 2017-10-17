@@ -17,7 +17,7 @@ void MSA::ToAlnFile(TextFile &File) const
 	else
 		{
 		File.PutString("MUSCLE ("
-		  MUSCLE_MAJOR_VERSION "." MUSCLE_MINOR_VERSION ")"
+		  SHORT_VERSION ")"
 		  " multiple sequence alignment\n");
 		File.PutString("\n");
 		}

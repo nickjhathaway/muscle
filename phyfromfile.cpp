@@ -223,6 +223,7 @@ bool Tree::GetGroupFromFile(TextFile &File, unsigned uNodeIndex,
 		bool bRightLength = GetGroupFromFile(File, uRight, &dEdgeLength);
 		if (bRightLength)
 			SetEdgeLength(uNodeIndex, uRight, dEdgeLength);
+
 #if	TRACE
 		if (bRightLength)
 			Log("Edge length for right sub-group: %.3g\n", dEdgeLength);
@@ -250,7 +251,9 @@ bool Tree::GetGroupFromFile(TextFile &File, unsigned uNodeIndex,
 		  szToken);
 
 // Group may optionally be followed by edge length.
-	File.SkipWhite();
+	bool bEof = File.SkipWhiteX();
+	if (bEof)
+		return false;
 	char c;
 	File.GetCharX(c);
 #if	TRACE

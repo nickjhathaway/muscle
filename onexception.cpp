@@ -8,8 +8,8 @@ static char szOnExceptionMessage[] =
 
 void OnException()
 	{
-	fprintf(stderr, szOnExceptionMessage);
-	Log(szOnExceptionMessage);
+	fprintf(stderr, "%s", szOnExceptionMessage);
+	Log("%s", szOnExceptionMessage);
 	Log("Finished %s\n", GetTimeAsStr());
 	exit(EXIT_Except);
 	}

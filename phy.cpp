@@ -39,13 +39,35 @@ void Tree::AssertAreNeighbors(unsigned uNodeIndex1, unsigned uNodeIndex2) const
 		Quit("AssertAreNeighbors(%u,%u) failed", uNodeIndex1, uNodeIndex2);
 		}
 
-	if (HasEdgeLength(uNodeIndex1, uNodeIndex2) && 
-	  GetEdgeLength(uNodeIndex1, uNodeIndex2) !=
-	    GetEdgeLength(uNodeIndex2, uNodeIndex1))
+	bool Has12 = HasEdgeLength(uNodeIndex1, uNodeIndex2);
+	bool Has21 = HasEdgeLength(uNodeIndex2, uNodeIndex1);
+	if (Has12 != Has21)
 		{
+		HasEdgeLength(uNodeIndex1, uNodeIndex2);
+		HasEdgeLength(uNodeIndex2, uNodeIndex1);
 		LogMe();
-		Quit("Tree::AssertAreNeighbors, Edge length disagrees %u, %u",
-		uNodeIndex1, uNodeIndex2);
+		Log("HasEdgeLength(%u, %u)=%c HasEdgeLength(%u, %u)=%c\n",
+		  uNodeIndex1,
+		  uNodeIndex2,
+		  Has12 ? 'T' : 'F',
+		  uNodeIndex2,
+		  uNodeIndex1,
+		  Has21 ? 'T' : 'F');
+
+		Quit("Tree::AssertAreNeighbors, HasEdgeLength not symmetric");
+		}
+
+	if (Has12)
+		{
+		double d12 = GetEdgeLength(uNodeIndex1, uNodeIndex2);
+		double d21 = GetEdgeLength(uNodeIndex2, uNodeIndex1);
+		if (d12 != d21)
+			{
+			LogMe();
+			Quit("Tree::AssertAreNeighbors, Edge length disagrees %u-%u=%.3g, %u-%u=%.3g",
+			  uNodeIndex1, uNodeIndex2, d12,
+			  uNodeIndex2, uNodeIndex1, d21);
+			}
 		}
 	}
 
@@ -147,7 +169,11 @@ bool Tree::IsEdge(unsigned uNodeIndex1, unsigned uNodeIndex2) const
 double Tree::GetEdgeLength(unsigned uNodeIndex1, unsigned uNodeIndex2) const
 	{
 	assert(uNodeIndex1 < m_uNodeCount && uNodeIndex2 < m_uNodeCount);
-	assert(HasEdgeLength(uNodeIndex1, uNodeIndex2));
+	if (!HasEdgeLength(uNodeIndex1, uNodeIndex2))
+		{
+		LogMe();
+		Quit("Missing edge length in tree %u-%u", uNodeIndex1, uNodeIndex2);
+		}
 
 	if (m_uNeighbor1[uNodeIndex1] == uNodeIndex2)
 		return m_dEdgeLength1[uNodeIndex1];
@@ -198,8 +224,8 @@ void Tree::ExpandCache()
 
 		const unsigned uBoolBytes = m_uCacheCount*sizeof(bool);
 		memcpy(bNewHasEdgeLength1, m_bHasEdgeLength1, uBoolBytes);
-		memcpy(bNewHasEdgeLength2, m_bHasEdgeLength1, uBoolBytes);
-		memcpy(bNewHasEdgeLength3, m_bHasEdgeLength1, uBoolBytes);
+		memcpy(bNewHasEdgeLength2, m_bHasEdgeLength2, uBoolBytes);
+		memcpy(bNewHasEdgeLength3, m_bHasEdgeLength3, uBoolBytes);
 		memcpy(bNewHasHeight, m_bHasHeight, uBoolBytes);
 
 		const unsigned uNameBytes = m_uCacheCount*sizeof(char *);
@@ -382,6 +408,8 @@ unsigned Tree::AppendBranch(unsigned uExistingLeafIndex)
 	m_bHasHeight[uNewLeaf1] = false;
 	m_bHasHeight[uNewLeaf2] = false;
 
+	m_Ids[uNewLeaf1] = uInsane;
+	m_Ids[uNewLeaf2] = uInsane;
 	return uNewLeaf1;
 	}
 
@@ -393,15 +421,15 @@ void Tree::LogMe() const
 		{
 		Log("rooted.\n");
 		Log("\n");
-		Log("Index  Parnt  LengthP  Left   LengthL  Right  LengthR  Name\n");
-		Log("-----  -----  -------  ----   -------  -----  -------  ----\n");
+		Log("Index  Parnt  LengthP  Left   LengthL  Right  LengthR     Id  Name\n");
+		Log("-----  -----  -------  ----   -------  -----  -------  -----  ----\n");
 		}
 	else
 		{
 		Log("unrooted.\n");
 		Log("\n");
-		Log("Index  Nbr_1  Length1  Nbr_2  Length2  Nbr_3  Length3  Name\n");
-		Log("-----  -----  -------  -----  -------  -----  -------  ----\n");
+		Log("Index  Nbr_1  Length1  Nbr_2  Length2  Nbr_3  Length3     Id  Name\n");
+		Log("-----  -----  -------  -----  -------  -----  -------  -----  ----\n");
 		}
 
 	for (unsigned uNodeIndex = 0; uNodeIndex < m_uNodeCount; ++uNodeIndex)
@@ -411,22 +439,54 @@ void Tree::LogMe() const
 		const unsigned n2 = m_uNeighbor2[uNodeIndex];
 		const unsigned n3 = m_uNeighbor3[uNodeIndex];
 		if (NULL_NEIGHBOR != n1)
-			Log("%5u  %7.3g  ", n1, m_dEdgeLength1[uNodeIndex]);
+			{
+			Log("%5u  ", n1);
+			if (m_bHasEdgeLength1[uNodeIndex])
+				Log("%7.4f  ", m_dEdgeLength1[uNodeIndex]);
+			else
+				Log("      *  ");
+			}
 		else
 			Log("                ");
+
 		if (NULL_NEIGHBOR != n2)
-			Log("%5u  %7.3g  ", n2, m_dEdgeLength2[uNodeIndex]);
+			{
+			Log("%5u  ", n2);
+			if (m_bHasEdgeLength2[uNodeIndex])
+				Log("%7.4f  ", m_dEdgeLength2[uNodeIndex]);
+			else
+				Log("      *  ");
+			}
 		else
 			Log("                ");
+
 		if (NULL_NEIGHBOR != n3)
-			Log("%5u  %7.3g  ", n3, m_dEdgeLength3[uNodeIndex]);
+			{
+			Log("%5u  ", n3);
+			if (m_bHasEdgeLength3[uNodeIndex])
+				Log("%7.4f  ", m_dEdgeLength3[uNodeIndex]);
+			else
+				Log("      *  ");
+			}
 		else
 			Log("                ");
+
+		if (m_Ids != 0 && IsLeaf(uNodeIndex))
+			{
+			unsigned uId = m_Ids[uNodeIndex];
+			if (uId == uInsane)
+				Log("    *");
+			else
+				Log("%5u", uId);
+			}
+		else
+			Log("     ");
+
 		if (m_bRooted && uNodeIndex == m_uRootNodeIndex)
-			Log("[ROOT] ");
+			Log("  [ROOT] ");
 		const char *ptrName = m_ptrName[uNodeIndex];
 		if (ptrName != 0)
-			Log("%s", ptrName);
+			Log("  %s", ptrName);
 		Log("\n");
 		}
 	}
@@ -446,6 +506,7 @@ void Tree::SetEdgeLength(unsigned uNodeIndex1, unsigned uNodeIndex2,
 		{
 		m_dEdgeLength2[uNodeIndex1] = dLength;
 		m_bHasEdgeLength2[uNodeIndex1] = true;
+
 		}
 	else
 		{

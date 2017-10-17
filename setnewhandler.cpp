@@ -11,7 +11,11 @@ void OnOutOfMemory()
 	free(EmergencyReserve);
 	fprintf(stderr, "\n*** OUT OF MEMORY ***\n");
 	fprintf(stderr, "Memory allocated so far %g MB\n", GetMemUseMB());
-	SaveCurrentAlignment();
+	extern MSA *ptrBestMSA;
+	if (ptrBestMSA == 0)
+		fprintf(stderr, "No alignment generated\n");
+	else
+		SaveCurrentAlignment();
 	exit(EXIT_FatalError);
 	}
 

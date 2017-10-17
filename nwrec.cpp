@@ -2,7 +2,7 @@
 Needleman-Wunch recursions
 
 Notation: i,j are prefix lengths so are in
-ranges i = [0,|A|) and j = [0,|B|].
+ranges i = [0,|A|] and j = [0,|B|].
 
 Profile positions are in ranges [0,|A|-1]
 and [0,|B|-1] so prefix length i corresponds

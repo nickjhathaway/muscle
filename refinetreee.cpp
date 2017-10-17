@@ -24,7 +24,7 @@ void RefineTreeE(MSA &msa, const SeqVect &v, Tree &tree, ProgNode *ProgNodes)
 	unsigned *uNewNodeIndexToOldNodeIndex= new unsigned[uNodeCount];
 
 	Tree Tree2;
-	TreeFromMSA(msa, Tree2, g_Cluster2, g_Distance2, g_Root2);
+	TreeFromMSA(msa, Tree2, g_Cluster2, g_Distance2, g_Root2, g_pstrDistMxFileName2);
 
 #if	DEBUG
 	ValidateMuscleIds(Tree2);
